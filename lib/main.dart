@@ -21,6 +21,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
         '/tracking': (context) => const TrackingScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }
@@ -793,12 +794,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _handleLogout() async {
-    if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/login');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1068,13 +1063,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           separatorBuilder: (context, index) =>
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) {
+                            final startValue = (0.6 + (index * 0.04)).clamp(0.0, 0.95);
+                            final endValue = (0.85 + (index * 0.04)).clamp(0.0, 0.99);
+                            
                             return ScaleTransition(
                               scale: Tween<double>(begin: 0.8, end: 1).animate(
                                 CurvedAnimation(
                                   parent: _animationController,
                                   curve: Interval(
-                                    0.7 + (index * 0.05),
-                                    1.0 + (index * 0.05),
+                                    startValue,
+                                    endValue,
                                     curve: Curves.easeOut,
                                   ),
                                 ),
@@ -1137,9 +1135,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     return GestureDetector(
-      onTap: index == 3 ? _handleLogout : (index == 1 ? () {
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const TrackingScreen()));
-      } : () {}),
+      onTap: index == 1
+          ? () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const TrackingScreen(),
+                ),
+              );
+            }
+          : index == 3
+              ? () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ),
+                  );
+                }
+              : () {},
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1937,6 +1949,541 @@ class GridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Profile Screen
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1100),
+      vsync: this,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FB),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 28),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0099CC),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(28),
+                    ),
+                  ),
+                  child: FadeTransition(
+                    opacity: Tween<double>(begin: 0, end: 1).animate(
+                      CurvedAnimation(
+                        parent: _animationController,
+                        curve: const Interval(0, 0.3, curve: Curves.easeInOut),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(32),
+                            child: GridView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                              ),
+                              itemCount: 4,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  color: Colors.grey[300],
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.grey[400],
+                                    size: 18,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Aayush',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'aayush@pettrust.com',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // My Pet Card
+                SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+                      .animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.2, 0.6, curve: Curves.easeOut),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'My Pet',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF003D66),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F2F4),
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                child: const Icon(
+                                  Icons.pets,
+                                  color: Color(0xFF9AA7B2),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text(
+                                      'Max',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF003D66),
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Golden Retriever',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF7B8E9E),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: const [
+                                  Text(
+                                    '3 years',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF7B8E9E),
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '32 kg',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF7B8E9E),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Booking History
+                FadeTransition(
+                  opacity: Tween<double>(begin: 0, end: 1).animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.35, 0.75, curve: Curves.easeInOut),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Booking History',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF003D66),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildBookingItem(
+                            name: 'Sarah Johnson',
+                            detail: 'Walking • 2026-02-20 at 10:00 AM',
+                            status: 'Upcoming',
+                            statusColor: const Color(0xFF0099CC),
+                          ),
+                          const SizedBox(height: 14),
+                          _buildBookingItem(
+                            name: 'Emma Rodriguez',
+                            detail: 'Grooming • 2026-02-15 at 2:00 PM',
+                            status: 'Completed',
+                            statusColor: const Color(0xFF7BBF9B),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Settings
+                SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+                      .animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.5, 0.95, curve: Curves.easeOut),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Settings',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF003D66),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildSettingRow(Icons.person, 'Edit Profile'),
+                          _buildSettingRow(Icons.favorite_border, 'Favorites'),
+                          _buildSettingRow(Icons.calendar_month, 'My Bookings'),
+                          _buildSettingRow(Icons.settings, 'Settings'),
+                          _buildSettingRow(Icons.logout, 'Logout',
+                              onTap: () {
+                            Navigator.of(context).pushReplacementNamed('/login');
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Bottom Navigation
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildProfileNavItem(
+                    icon: Icons.home,
+                    label: 'Home',
+                    isActive: false,
+                    onTap: () {
+                      Navigator.of(context).pushReplacementNamed('/home');
+                    },
+                  ),
+                  _buildProfileNavItem(
+                    icon: Icons.location_on,
+                    label: 'Tracking',
+                    isActive: false,
+                    onTap: () {
+                      Navigator.of(context).pushReplacementNamed('/tracking');
+                    },
+                  ),
+                  _buildProfileNavItem(
+                    icon: Icons.chat_bubble,
+                    label: 'Chat',
+                    isActive: false,
+                    onTap: () {},
+                  ),
+                  _buildProfileNavItem(
+                    icon: Icons.person,
+                    label: 'Profile',
+                    isActive: true,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookingItem({
+    required String name,
+    required String detail,
+    required String status,
+    required Color statusColor,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F2F4),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: const Icon(
+            Icons.pets,
+            color: Color(0xFF9AA7B2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF003D66),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                detail,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF7B8E9E),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Text(
+            status,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: statusColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingRow(IconData icon, String title, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F6F8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: const Color(0xFF003D66),
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF003D66),
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: Color(0xFF9AA7B2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileNavItem({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isActive)
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0099CC),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
+            )
+          else
+            Icon(
+              icon,
+              color: const Color(0xFF9AA7B2),
+              size: 22,
+            ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isActive ? const Color(0xFF003D66) : const Color(0xFF9AA7B2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class RoutePainter extends CustomPainter {
