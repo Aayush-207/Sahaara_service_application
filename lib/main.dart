@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+        '/tracking': (context) => const TrackingScreen(),
       },
     );
   }
@@ -299,7 +300,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                       widget.data.title,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize: 30,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF003D66),
                       ),
@@ -310,7 +311,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                       widget.data.description,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w400,
                         color: Color(0xFF4A7C99),
                         height: 1.5,
@@ -442,7 +443,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         const Text(
                           'Welcome Back',
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: 30,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF003D66),
                           ),
@@ -452,7 +453,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         const Text(
                           'Sign in to continue',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w400,
                             color: Color(0xFF4A7C99),
                           ),
@@ -465,7 +466,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             const Text(
                               'Email',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF003D66),
                               ),
@@ -477,6 +478,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 hintText: 'Enter your email',
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFAAAAAA),
+                                  fontSize: 15,
                                 ),
                                 filled: true,
                                 fillColor: const Color(0xFFF5F5F5),
@@ -500,7 +502,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             const Text(
                               'Password',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF003D66),
                               ),
@@ -513,6 +515,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 hintText: 'Enter your password',
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFAAAAAA),
+                                  fontSize: 15,
                                 ),
                                 filled: true,
                                 fillColor: const Color(0xFFF5F5F5),
@@ -555,7 +558,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 : const Text(
                                     'Sign In',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 17,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),
@@ -577,7 +580,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               child: Text(
                                 'Or continue with',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w400,
                                   color: Color(0xFF666666),
                                 ),
@@ -614,7 +617,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   const Text(
                                     'Google',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF333333),
                                     ),
@@ -637,7 +640,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   const Text(
                                     'Apple',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF333333),
                                     ),
@@ -655,7 +658,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             const Text(
                               'Don\'t have an account? ',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w400,
                                 color: Color(0xFF666666),
                               ),
@@ -667,7 +670,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               child: const Text(
                                 'Sign Up',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF0099CC),
                                 ),
@@ -830,7 +833,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             const Text(
                               'Good Morning, Aayush',
                               style: TextStyle(
-                                fontSize: 24,
+                                fontSize: 26,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),
@@ -848,7 +851,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 const Text(
                                   'San Francisco, CA',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w400,
                                     color: Colors.white,
                                   ),
@@ -874,6 +877,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     hintText: 'Search caregivers...',
                                     hintStyle: const TextStyle(
                                       color: Color(0xFFAAAAAA),
+                                      fontSize: 15,
                                     ),
                                     prefixIcon: const Icon(
                                       Icons.search,
@@ -944,7 +948,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               child: Text(
                                 _categories[index],
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: _selectedCategory == index
                                       ? Colors.white
@@ -979,7 +983,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             const Text(
                               'Nearby Caregivers',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF003D66),
                               ),
@@ -989,7 +993,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               child: const Text(
                                 'See All',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF0099CC),
                                 ),
@@ -1051,7 +1055,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         const Text(
                           'Top Rated',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF003D66),
                           ),
@@ -1133,7 +1137,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     return GestureDetector(
-      onTap: index == 3 ? _handleLogout : () {},
+      onTap: index == 3 ? _handleLogout : (index == 1 ? () {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const TrackingScreen()));
+      } : () {}),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1148,7 +1154,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
               color: index == 0
                   ? const Color(0xFF0099CC)
@@ -1222,7 +1228,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     caregiver.name,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF003D66),
                     ),
@@ -1240,7 +1246,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       Text(
                         '${caregiver.rating}',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF003D66),
                         ),
@@ -1255,7 +1261,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       Text(
                         '${caregiver.distance} km',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w400,
                           color: Color(0xFF999999),
                         ),
@@ -1266,7 +1272,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Text(
                     '\$${caregiver.hourlyRate}/hr',
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF0099CC),
                     ),
@@ -1337,7 +1343,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         child: Text(
                           caregiver.name,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF003D66),
                           ),
@@ -1362,7 +1368,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       Text(
                         '${caregiver.rating}',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF003D66),
                         ),
@@ -1377,7 +1383,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       Text(
                         '${caregiver.distance} km',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w400,
                           color: Color(0xFF999999),
                         ),
@@ -1388,7 +1394,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Text(
                     '\$${caregiver.hourlyRate}/hr',
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF0099CC),
                     ),
@@ -1401,6 +1407,580 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       );
     }
   }
+}
+
+// Tracking Screen
+class TrackingScreen extends StatefulWidget {
+  const TrackingScreen({super.key});
+
+  @override
+  State<TrackingScreen> createState() => _TrackingScreenState();
+}
+
+class _TrackingScreenState extends State<TrackingScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1100),
+      vsync: this,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FB),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0099CC),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(28),
+                    ),
+                  ),
+                  child: FadeTransition(
+                    opacity: Tween<double>(begin: 0, end: 1).animate(
+                      CurvedAnimation(
+                        parent: _animationController,
+                        curve: const Interval(0, 0.3, curve: Curves.easeInOut),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Live Tracking',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Max is on a walk with Sarah',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Map Card
+                SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+                      .animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.2, 0.6, curve: Curves.easeOut),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      height: 220,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF6F9),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: CustomPaint(
+                              painter: GridPainter(),
+                              child: const SizedBox.expand(),
+                            ),
+                          ),
+                          Positioned(
+                            top: 16,
+                            left: 16,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Text(
+                                'Live Tracking',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: RoutePainter(),
+                            ),
+                          ),
+                          Positioned(
+                            left: 70,
+                            bottom: 40,
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0099CC),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.location_on,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Stats
+                FadeTransition(
+                  opacity: Tween<double>(begin: 0, end: 1).animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.4, 0.8, curve: Curves.easeInOut),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: const [
+                        Expanded(
+                          child: TrackingStatCard(
+                            icon: Icons.location_on,
+                            value: '2.4',
+                            unit: 'km',
+                            label: 'Distance',
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TrackingStatCard(
+                            icon: Icons.schedule,
+                            value: '24',
+                            unit: 'min',
+                            label: 'Time',
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TrackingStatCard(
+                            icon: Icons.local_fire_department,
+                            value: '48',
+                            unit: 'cal',
+                            label: 'Calories',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Live Updates
+                SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+                      .animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: const Interval(0.5, 0.9, curve: Curves.easeOut),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(
+                                Icons.photo_camera,
+                                color: Color(0xFF0099CC),
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Live Updates',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const TrackingUpdateItem(
+                            title: 'Playing at the park!',
+                            time: '10:15 AM',
+                          ),
+                          const SizedBox(height: 14),
+                          const TrackingUpdateItem(
+                            title: 'Hydration break',
+                            time: '10:30 AM',
+                          ),
+                          const SizedBox(height: 14),
+                          const TrackingUpdateItem(
+                            title: 'Making new friends',
+                            time: '10:45 AM',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Bottom Navigation
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildTrackingNavItem(
+                    icon: Icons.home,
+                    label: 'Home',
+                    isActive: false,
+                    onTap: () {
+                      Navigator.of(context).pushReplacementNamed('/home');
+                    },
+                  ),
+                  _buildTrackingNavItem(
+                    icon: Icons.location_on,
+                    label: 'Tracking',
+                    isActive: true,
+                    onTap: () {},
+                  ),
+                  _buildTrackingNavItem(
+                    icon: Icons.chat_bubble,
+                    label: 'Chat',
+                    isActive: false,
+                    onTap: () {},
+                  ),
+                  _buildTrackingNavItem(
+                    icon: Icons.person,
+                    label: 'Profile',
+                    isActive: false,
+                    onTap: () {
+                      Navigator.of(context).pushReplacementNamed('/login');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackingNavItem({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isActive)
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0099CC),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
+            )
+          else
+            Icon(
+              icon,
+              color: const Color(0xFF9AA7B2),
+              size: 22,
+            ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isActive ? const Color(0xFF003D66) : const Color(0xFF9AA7B2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TrackingStatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String unit;
+  final String label;
+
+  const TrackingStatCard({
+    super.key,
+    required this.icon,
+    required this.value,
+    required this.unit,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: const Color(0xFF0099CC),
+            size: 20,
+          ),
+          const SizedBox(height: 8),
+          RichText(
+            text: TextSpan(
+              text: value,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF003D66),
+              ),
+              children: [
+                TextSpan(
+                  text: ' $unit',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF003D66),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF7B8E9E),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TrackingUpdateItem extends StatelessWidget {
+  final String title;
+  final String time;
+
+  const TrackingUpdateItem({
+    super.key,
+    required this.title,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F2F4),
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: const Icon(
+            Icons.pets,
+            color: Color(0xFF9AA7B2),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF003D66),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                time,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF7B8E9E),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFDDECF2)
+      ..strokeWidth = 1;
+
+    const double gap = 18;
+    for (double x = 0; x < size.width; x += gap) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += gap) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class RoutePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF0099CC)
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    path.moveTo(size.width * 0.12, size.height * 0.62);
+    path.cubicTo(
+      size.width * 0.25,
+      size.height * 0.35,
+      size.width * 0.45,
+      size.height * 0.75,
+      size.width * 0.65,
+      size.height * 0.45,
+    );
+    path.cubicTo(
+      size.width * 0.75,
+      size.height * 0.30,
+      size.width * 0.85,
+      size.height * 0.40,
+      size.width * 0.88,
+      size.height * 0.42,
+    );
+
+    const double dashLength = 10;
+    const double dashGap = 10;
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final segment = metric.extractPath(distance, distance + dashLength);
+        canvas.drawPath(segment, paint);
+        distance += dashLength + dashGap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // Sign Up Screen
@@ -1521,7 +2101,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         const Text(
                           'Create Account',
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: 30,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF003D66),
                           ),
@@ -1531,7 +2111,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         const Text(
                           'Join PetTrust today',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w400,
                             color: Color(0xFF4A7C99),
                           ),
@@ -1544,7 +2124,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                             const Text(
                               'Full Name',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF003D66),
                               ),
@@ -1556,6 +2136,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                                 hintText: 'Enter your name',
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFAAAAAA),
+                                  fontSize: 15,
                                 ),
                                 filled: true,
                                 fillColor: const Color(0xFFF5F5F5),
@@ -1579,7 +2160,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                             const Text(
                               'Email',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF003D66),
                               ),
@@ -1591,6 +2172,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                                 hintText: 'Enter your email',
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFAAAAAA),
+                                  fontSize: 15,
                                 ),
                                 filled: true,
                                 fillColor: const Color(0xFFF5F5F5),
@@ -1614,7 +2196,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                             const Text(
                               'Password',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF003D66),
                               ),
@@ -1627,6 +2209,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                                 hintText: 'Enter your password',
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFAAAAAA),
+                                  fontSize: 15,
                                 ),
                                 filled: true,
                                 fillColor: const Color(0xFFF5F5F5),
@@ -1669,7 +2252,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                                 : const Text(
                                     'Create Account',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 17,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),
@@ -1691,7 +2274,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                               child: Text(
                                 'Or continue with',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w400,
                                   color: Color(0xFF666666),
                                 ),
@@ -1728,7 +2311,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                                   const Text(
                                     'Google',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF333333),
                                     ),
@@ -1751,7 +2334,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                                   const Text(
                                     'Apple',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF333333),
                                     ),
@@ -1769,7 +2352,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                             const Text(
                               'Already have an account? ',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w400,
                                 color: Color(0xFF666666),
                               ),
@@ -1781,7 +2364,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                               child: const Text(
                                 'Sign In',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF0099CC),
                                 ),
