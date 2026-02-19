@@ -27,6 +27,10 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/favorites': (context) => const FavoritesScreen(),
         '/manage-pets': (context) => const ManagePetsScreen(),
+        '/caregiver-detail': (context) {
+          final caregiver = ModalRoute.of(context)?.settings.arguments as Caregiver?;
+          return caregiver != null ? CaregiverDetailScreen(caregiver: caregiver) : const HomeScreen();
+        },
       },
     );
   }
@@ -70,6 +74,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           'Book with confidence knowing all caregivers are background-checked and highly rated by the community.',
     ),
   ];
+
+  // Asset images for onboarding pages
+  final Map<String, String> onboardingImages = {
+    'Find Trusted Caregivers': 'assets/find_trusted_caregivers.jpg',
+    'Track in Real-Time': 'assets/Track_in_real_time.jpg',
+    'Peace of Mind': 'assets/Peace_of_mind.jpg',
+  };
 
   @override
   void initState() {
@@ -282,21 +293,17 @@ class _OnboardingPageState extends State<OnboardingPage>
                       borderRadius: BorderRadius.circular(20),
                       color: Colors.grey[300],
                     ),
-                    child: widget.data.title == 'Find Trusted Caregivers'
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.asset(
-                              'assets/find_trusted_caregivers.jpg',
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Center(
-                            child: Icon(
-                              Icons.image,
-                              size: 80,
-                              color: Colors.grey[400],
-                            ),
-                          ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        widget.data.title == 'Find Trusted Caregivers'
+                            ? 'assets/find_trusted_caregivers.jpg'
+                            : widget.data.title == 'Track in Real-Time'
+                                ? 'assets/Track_in_real_time.jpg'
+                                : 'assets/Peace_of_mind.jpg',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -713,6 +720,10 @@ class Caregiver {
   final double hourlyRate;
   final String specialty;
   final List<String> profileImages;
+  final String location;
+  final List<String> services;
+  final String about;
+  final int experience;
 
   Caregiver({
     required this.name,
@@ -721,6 +732,10 @@ class Caregiver {
     required this.hourlyRate,
     required this.specialty,
     required this.profileImages,
+    required this.location,
+    required this.services,
+    required this.about,
+    required this.experience,
   });
 }
 
@@ -760,6 +775,10 @@ final List<Caregiver> nearbyCaregivers = [
     hourlyRate: 25,
     specialty: 'Walking',
     profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Downtown, 2km away',
+    services: ['Dog Walking', 'Pet Sitting', 'Dog Training'],
+    about: 'Professional pet care specialist with 5+ years of experience. Sarah loves all dogs and provides personalized care with daily updates.',
+    experience: 5,
   ),
   Caregiver(
     name: 'Marcus Williams',
@@ -768,6 +787,118 @@ final List<Caregiver> nearbyCaregivers = [
     hourlyRate: 22,
     specialty: 'Grooming',
     profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Midtown, 1.2km away',
+    services: ['Grooming', 'Dog Bathing', 'Nail Trimming'],
+    about: 'Expert groomer with certified training. Marcus specializes in all dog breeds and ensures your pet looks their best.',
+    experience: 7,
+  ),
+  Caregiver(
+    name: 'Emma Rodriguez',
+    rating: 4.95,
+    distance: 0.5,
+    hourlyRate: 28,
+    specialty: 'Sitting',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Riverside, 500m away',
+    services: ['Pet Sitting', 'Dog Walking', 'Overnight Care'],
+    about: 'Compassionate pet sitter who treats every pet like family. Emma offers flexible scheduling and daily photo updates.',
+    experience: 6,
+  ),
+  Caregiver(
+    name: 'David Chen',
+    rating: 4.7,
+    distance: 1.5,
+    hourlyRate: 26,
+    specialty: 'Walking',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Westside, 1.5km away',
+    services: ['Dog Walking', 'Group Walks', 'Exercise Training'],
+    about: 'Athletic and energetic dog walker. David specializes in high-energy dogs and provides structured exercise routines.',
+    experience: 4,
+  ),
+  Caregiver(
+    name: 'Olivia Martinez',
+    rating: 4.85,
+    distance: 0.9,
+    hourlyRate: 26,
+    specialty: 'Vet',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Healthcare District, 900m away',
+    services: ['Medical Care', 'Health Monitoring', 'Medication Administration'],
+    about: 'Licensed veterinary technician with extensive medical knowledge. Olivia provides professional health monitoring and care.',
+    experience: 8,
+  ),
+  Caregiver(
+    name: 'James Murphy',
+    rating: 4.6,
+    distance: 1.8,
+    hourlyRate: 20,
+    specialty: 'Walking',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Eastside, 1.8km away',
+    services: ['Dog Walking', 'Basic Training', 'Socialization'],
+    about: 'Friendly dog walker with a passion for helping dogs socialize. James creates a safe and fun environment for all pets.',
+    experience: 3,
+  ),
+  Caregiver(
+    name: 'Sophie Bennett',
+    rating: 4.9,
+    distance: 0.7,
+    hourlyRate: 27,
+    specialty: 'Sitting',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Park View, 700m away',
+    services: ['Pet Sitting', 'Dog Walking', 'Playdate Coordination'],
+    about: 'Experienced pet sitter with a special touch for anxious pets. Sophie creates calm environments and provides constant care.',
+    experience: 6,
+  ),
+  Caregiver(
+    name: 'Michael Torres',
+    rating: 4.75,
+    distance: 1.3,
+    hourlyRate: 24,
+    specialty: 'Grooming',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Commerce Ave, 1.3km away',
+    services: ['Full Grooming', 'Spa Treatments', 'Show Prep'],
+    about: 'Professional groomer with show experience. Michael provides premium grooming services tailored to each dog\'s needs.',
+    experience: 9,
+  ),
+  Caregiver(
+    name: 'Lisa Anderson',
+    rating: 4.8,
+    distance: 1.1,
+    hourlyRate: 25,
+    specialty: 'Training',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Learning Center, 1.1km away',
+    services: ['Obedience Training', 'Behavior Correction', 'Puppy Training'],
+    about: 'Certified dog trainer specializing in positive reinforcement. Lisa helps dogs learn good behavior in a fun way.',
+    experience: 11,
+  ),
+  Caregiver(
+    name: 'Carlos Rodriguez',
+    rating: 4.65,
+    distance: 2.0,
+    hourlyRate: 23,
+    specialty: 'Walking',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Northgate, 2km away',
+    services: ['Dog Walking', 'Adventure Hikes', 'Beach Trips'],
+    about: 'Adventure-loving dog walker who enjoys outdoor activities. Carlos takes dogs on exciting outings and nature walks.',
+    experience: 5,
+  ),
+  Caregiver(
+    name: 'Rachel White',
+    rating: 4.92,
+    distance: 0.6,
+    hourlyRate: 29,
+    specialty: 'Sitting',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+    location: 'Central Heights, 600m away',
+    services: ['Overnight Sitting', 'Busy Day Care', 'Special Needs Care'],
+    about: 'Premium pet care specialist. Rachel excels at caring for senior pets and dogs with special needs.',
+    experience: 10,
   ),
 ];
 
@@ -779,6 +910,10 @@ final List<Caregiver> topRatedCaregivers = [
     hourlyRate: 25,
     specialty: 'Walking',
     profileImages: ['1', '2', '3', '4'],
+    location: 'Downtown, 2km away',
+    services: ['Dog Walking', 'Pet Sitting', 'Dog Training'],
+    about: 'Professional pet care specialist with 5+ years of experience. Sarah loves all dogs and provides personalized care with daily updates.',
+    experience: 5,
   ),
   Caregiver(
     name: 'Marcus Williams',
@@ -787,6 +922,10 @@ final List<Caregiver> topRatedCaregivers = [
     hourlyRate: 22,
     specialty: 'Grooming',
     profileImages: ['1', '2', '3', '4'],
+    location: 'Midtown, 1.2km away',
+    services: ['Grooming', 'Dog Bathing', 'Nail Trimming'],
+    about: 'Expert groomer with certified training. Marcus specializes in all dog breeds and ensures your pet looks their best.',
+    experience: 7,
   ),
   Caregiver(
     name: 'Emma Rodriguez',
@@ -795,6 +934,10 @@ final List<Caregiver> topRatedCaregivers = [
     hourlyRate: 28,
     specialty: 'Sitting',
     profileImages: ['1', '2', '3', '4'],
+    location: 'Riverside, 500m away',
+    services: ['Pet Sitting', 'Dog Walking', 'Overnight Care'],
+    about: 'Compassionate pet sitter who treats every pet like family. Emma offers flexible scheduling and daily photo updates.',
+    experience: 6,
   ),
   Caregiver(
     name: 'Olivia Martinez',
@@ -803,6 +946,10 @@ final List<Caregiver> topRatedCaregivers = [
     hourlyRate: 26,
     specialty: 'Vet',
     profileImages: ['1', '2', '3', '4'],
+    location: 'Healthcare District, 900m away',
+    services: ['Medical Care', 'Health Monitoring', 'Medication Administration'],
+    about: 'Licensed veterinary technician with extensive medical knowledge. Olivia provides professional health monitoring and care.',
+    experience: 8,
   ),
 ];
 
@@ -1062,19 +1209,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ),
                                 ),
                               ),
-                              child: _buildCaregiverCard(
-                                nearbyCaregivers[index],
-                                isGridView: true,
-                                onFavoriteToggle: () {
-                                  setState(() {
-                                    if (favoriteCaregivers.contains(nearbyCaregivers[index].name)) {
-                                      favoriteCaregivers.remove(nearbyCaregivers[index].name);
-                                    } else {
-                                      favoriteCaregivers.add(nearbyCaregivers[index].name);
-                                    }
-                                  });
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).pushNamed(
+                                    '/caregiver-detail',
+                                    arguments: nearbyCaregivers[index],
+                                  );
                                 },
-                                isFavorite: favoriteCaregivers.contains(nearbyCaregivers[index].name),
+                                child: _buildCaregiverCard(
+                                  nearbyCaregivers[index],
+                                  isGridView: true,
+                                  onFavoriteToggle: () {
+                                    setState(() {
+                                      if (favoriteCaregivers.contains(nearbyCaregivers[index].name)) {
+                                        favoriteCaregivers.remove(nearbyCaregivers[index].name);
+                                      } else {
+                                        favoriteCaregivers.add(nearbyCaregivers[index].name);
+                                      }
+                                    });
+                                  },
+                                  isFavorite: favoriteCaregivers.contains(nearbyCaregivers[index].name),
+                                ),
                               ),
                             );
                           },
@@ -1128,25 +1283,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ),
                                 ),
                               ),
-                              child: _buildCaregiverCard(
-                                topRatedCaregivers[index],
-                                isGridView: false,
-                                onFavoriteToggle: () {
-                                  setState(() {
-                                    if (favoriteCaregivers.contains(topRatedCaregivers[index].name)) {
-                                      favoriteCaregivers.remove(topRatedCaregivers[index].name);
-                                    } else {
-                                      favoriteCaregivers.add(topRatedCaregivers[index].name);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Added to favourites'),
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
-                                    }
-                                  });
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).pushNamed(
+                                    '/caregiver-detail',
+                                    arguments: topRatedCaregivers[index],
+                                  );
                                 },
-                                isFavorite: favoriteCaregivers.contains(topRatedCaregivers[index].name),
+                                child: _buildCaregiverCard(
+                                  topRatedCaregivers[index],
+                                  isGridView: false,
+                                  onFavoriteToggle: () {
+                                    setState(() {
+                                      if (favoriteCaregivers.contains(topRatedCaregivers[index].name)) {
+                                        favoriteCaregivers.remove(topRatedCaregivers[index].name);
+                                      } else {
+                                        favoriteCaregivers.add(topRatedCaregivers[index].name);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Added to favourites'),
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                    });
+                                  },
+                                  isFavorite: favoriteCaregivers.contains(topRatedCaregivers[index].name),
+                                ),
                               ),
                             );
                           },
@@ -1283,29 +1446,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               'assets/Sarah_Johnson.jpg',
                               fit: BoxFit.cover,
                             )
-                          : GridView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                              ),
-                              itemCount: 6,
-                              itemBuilder: (context, index) {
-                                return Container(
-                                  margin: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(8),
+                          : caregiver.name == 'Marcus Williams'
+                              ? Image.asset(
+                                  'assets/Marcus_Williams.jpg',
+                                  fit: BoxFit.cover,
+                                )
+                              : GridView.builder(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
                                   ),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.person,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                                  itemCount: 6,
+                                  itemBuilder: (context, index) {
+                                    return Container(
+                                      margin: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.person,
+                                          color: Colors.grey[400],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                     ),
                   ),
                 ),
@@ -1433,28 +1601,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             'assets/Sarah_Johnson.jpg',
                             fit: BoxFit.cover,
                           )
-                        : GridView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                            ),
-                            itemCount: 4,
-                            itemBuilder: (context, index) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
+                        : caregiver.name == 'Marcus Williams'
+                            ? Image.asset(
+                                'assets/Marcus_Williams.jpg',
+                                fit: BoxFit.cover,
+                              )
+                            : GridView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
                                 ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.grey[400],
-                                    size: 16,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                itemCount: 4,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.grey[400],
+                                        size: 16,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -2203,92 +2376,100 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                         const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final caregiver = favoriteList[index];
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            )
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                width: 74,
-                                height: 74,
-                                color: const Color(0xFFE8F4F8),
-                                child: const Icon(
-                                  Icons.person,
-                                  color: Color(0xFF9AA7B2),
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pushNamed(
+                            '/caregiver-detail',
+                            arguments: caregiver,
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: 74,
+                                  height: 74,
+                                  color: const Color(0xFFE8F4F8),
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: Color(0xFF9AA7B2),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    caregiver.name,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF003D66),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      caregiver.name,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF003D66),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.star,
-                                        color: Color(0xFFFFA500),
-                                        size: 12,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${caregiver.rating}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF003D66),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.star,
+                                          color: Color(0xFFFFA500),
+                                          size: 12,
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '\$${caregiver.hourlyRate}/hr',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF0099CC),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${caregiver.rating}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF003D66),
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${caregiver.distance} km • ${caregiver.specialty}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: Color(0xFF7B8E9E),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '\$${caregiver.hourlyRate}/hr',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF0099CC),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${caregiver.distance} km • ${caregiver.specialty}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF7B8E9E),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const Icon(
-                              Icons.favorite,
-                              color: Colors.red,
-                              size: 18,
-                            ),
-                          ],
+                              const Icon(
+                                Icons.favorite,
+                                color: Colors.red,
+                                size: 18,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -3791,6 +3972,481 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Caregiver Detail Screen
+class CaregiverDetailScreen extends StatefulWidget {
+  final Caregiver caregiver;
+
+  const CaregiverDetailScreen({
+    super.key,
+    required this.caregiver,
+  });
+
+  @override
+  State<CaregiverDetailScreen> createState() => _CaregiverDetailScreenState();
+}
+
+class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _animationController.forward();
+    _isFavorite = favoriteCaregivers.contains(widget.caregiver.name);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FB),
+      body: CustomScrollView(
+        slivers: [
+          // Image Header
+          SliverAppBar(
+            expandedHeight: 300,
+            floating: false,
+            pinned: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                children: [
+                  // Profile Image
+                  Container(
+                    width: double.infinity,
+                    height: 300,
+                    color: const Color(0xFFE8F4F8),
+                    child: widget.caregiver.name == 'Sarah Johnson'
+                        ? Image.asset(
+                            'assets/Sarah_Johnson.jpg',
+                            fit: BoxFit.cover,
+                          )
+                        : widget.caregiver.name == 'Marcus Williams'
+                            ? Image.asset(
+                                'assets/Marcus_Williams.jpg',
+                                fit: BoxFit.cover,
+                              )
+                            : GridView.count(
+                                crossAxisCount: 3,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                children: List.generate(
+                                  9,
+                                  (index) => Container(
+                                    color: Colors.grey[300],
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.grey[400],
+                                        size: 30,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                  ),
+                  // Gradient Overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Back Button
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Color(0xFF003D66),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Favorite Button
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _isFavorite = !_isFavorite;
+                          if (_isFavorite) {
+                            favoriteCaregivers.add(widget.caregiver.name);
+                          } else {
+                            favoriteCaregivers.remove(widget.caregiver.name);
+                          }
+                        });
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          _isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: _isFavorite ? Colors.red : const Color(0xFF9AA7B2),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Content
+          SliverToBoxAdapter(
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0, end: 1).animate(
+                CurvedAnimation(parent: _animationController, curve: const Interval(0.3, 0.8)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name and Rating
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.caregiver.name,
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFE8CC),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.star, color: Color(0xFFFFA500), size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${widget.caregiver.rating}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF003D66),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F3FF),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                widget.caregiver.specialty,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0099CC),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              '${widget.caregiver.experience} years exp.',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF666666),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Location and Distance
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE0F3FF),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Color(0xFF0099CC),
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Location',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF999999),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.caregiver.location,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF003D66),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // About
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'About',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF003D66),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.caregiver.about,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF666666),
+                            height: 1.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Services
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Services',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF003D66),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: widget.caregiver.services
+                              .map(
+                                (service) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE0F3FF),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFF0099CC),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    service,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF0099CC),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Pricing
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Hourly Rate',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF999999),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '\$${widget.caregiver.hourlyRate}/hr',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0099CC),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            width: 1,
+                            height: 40,
+                            color: Colors.grey[200],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                'Distance',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF999999),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${widget.caregiver.distance} km',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      // Book Slot Button
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: ElevatedButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Booking slot with ${widget.caregiver.name}...'),
+                duration: const Duration(seconds: 2),
+                backgroundColor: const Color(0xFF0099CC),
+              ),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0099CC),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 4,
+          ),
+          child: const Text(
+            'Book a Slot',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
           ),
         ),
