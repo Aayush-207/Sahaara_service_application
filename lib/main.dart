@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +25,8 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/tracking': (context) => const TrackingScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/favorites': (context) => const FavoritesScreen(),
+        '/manage-pets': (context) => const ManagePetsScreen(),
       },
     );
   }
@@ -277,13 +282,21 @@ class _OnboardingPageState extends State<OnboardingPage>
                       borderRadius: BorderRadius.circular(20),
                       color: Colors.grey[300],
                     ),
-                    child: Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 80,
-                        color: Colors.grey[400],
-                      ),
-                    ),
+                    child: widget.data.title == 'Find Trusted Caregivers'
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(
+                              'assets/find_trusted_caregivers.jpg',
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Center(
+                            child: Icon(
+                              Icons.image,
+                              size: 80,
+                              color: Colors.grey[400],
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -711,6 +724,88 @@ class Caregiver {
   });
 }
 
+class Pet {
+  final String name;
+  final String breed;
+  final String age;
+  final String weight;
+  final String? imagePath;
+
+  Pet({
+    required this.name,
+    required this.breed,
+    required this.age,
+    required this.weight,
+    this.imagePath,
+  });
+}
+
+final List<Pet> userPets = [
+  Pet(
+    name: 'Max',
+    breed: 'Golden Retriever',
+    age: '3',
+    weight: '32',
+    imagePath: null,
+  ),
+];
+
+final Set<String> favoriteCaregivers = <String>{};
+
+final List<Caregiver> nearbyCaregivers = [
+  Caregiver(
+    name: 'Sarah Johnson',
+    rating: 4.9,
+    distance: 0.8,
+    hourlyRate: 25,
+    specialty: 'Walking',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+  ),
+  Caregiver(
+    name: 'Marcus Williams',
+    rating: 4.8,
+    distance: 1.2,
+    hourlyRate: 22,
+    specialty: 'Grooming',
+    profileImages: ['1', '2', '3', '4', '5', '6'],
+  ),
+];
+
+final List<Caregiver> topRatedCaregivers = [
+  Caregiver(
+    name: 'Sarah Johnson',
+    rating: 4.9,
+    distance: 0.8,
+    hourlyRate: 25,
+    specialty: 'Walking',
+    profileImages: ['1', '2', '3', '4'],
+  ),
+  Caregiver(
+    name: 'Marcus Williams',
+    rating: 4.8,
+    distance: 1.2,
+    hourlyRate: 22,
+    specialty: 'Grooming',
+    profileImages: ['1', '2', '3', '4'],
+  ),
+  Caregiver(
+    name: 'Emma Rodriguez',
+    rating: 4.95,
+    distance: 0.5,
+    hourlyRate: 28,
+    specialty: 'Sitting',
+    profileImages: ['1', '2', '3', '4'],
+  ),
+  Caregiver(
+    name: 'Olivia Martinez',
+    rating: 4.85,
+    distance: 0.9,
+    hourlyRate: 26,
+    specialty: 'Vet',
+    profileImages: ['1', '2', '3', '4'],
+  ),
+];
+
 // Home Screen
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -723,60 +818,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late AnimationController _animationController;
   int _selectedCategory = 0;
   final List<String> _categories = ['All', 'Walking', 'Grooming', 'Sitting', 'Vet'];
-
-  final List<Caregiver> _nearbyCaregivers = [
-    Caregiver(
-      name: 'Sarah Johnson',
-      rating: 4.9,
-      distance: 0.8,
-      hourlyRate: 25,
-      specialty: 'Walking',
-      profileImages: ['1', '2', '3', '4', '5', '6'],
-    ),
-    Caregiver(
-      name: 'Marcus Williams',
-      rating: 4.8,
-      distance: 1.2,
-      hourlyRate: 22,
-      specialty: 'Grooming',
-      profileImages: ['1', '2', '3', '4', '5', '6'],
-    ),
-  ];
-
-  final List<Caregiver> _topRatedCaregivers = [
-    Caregiver(
-      name: 'Sarah Johnson',
-      rating: 4.9,
-      distance: 0.8,
-      hourlyRate: 25,
-      specialty: 'Walking',
-      profileImages: ['1', '2', '3', '4'],
-    ),
-    Caregiver(
-      name: 'Marcus Williams',
-      rating: 4.8,
-      distance: 1.2,
-      hourlyRate: 22,
-      specialty: 'Grooming',
-      profileImages: ['1', '2', '3', '4'],
-    ),
-    Caregiver(
-      name: 'Emma Rodriguez',
-      rating: 4.95,
-      distance: 0.5,
-      hourlyRate: 28,
-      specialty: 'Sitting',
-      profileImages: ['1', '2', '3', '4'],
-    ),
-    Caregiver(
-      name: 'Olivia Martinez',
-      rating: 4.85,
-      distance: 0.9,
-      hourlyRate: 26,
-      specialty: 'Vet',
-      profileImages: ['1', '2', '3', '4'],
-    ),
-  ];
 
   @override
   void initState() {
@@ -1008,7 +1049,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             mainAxisSpacing: 16,
                             childAspectRatio: 0.88,
                           ),
-                          itemCount: _nearbyCaregivers.length,
+                          itemCount: nearbyCaregivers.length,
                           itemBuilder: (context, index) {
                             return ScaleTransition(
                               scale: Tween<double>(begin: 0.7, end: 1).animate(
@@ -1022,8 +1063,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ),
                               ),
                               child: _buildCaregiverCard(
-                                _nearbyCaregivers[index],
+                                nearbyCaregivers[index],
                                 isGridView: true,
+                                onFavoriteToggle: () {
+                                  setState(() {
+                                    if (favoriteCaregivers.contains(nearbyCaregivers[index].name)) {
+                                      favoriteCaregivers.remove(nearbyCaregivers[index].name);
+                                    } else {
+                                      favoriteCaregivers.add(nearbyCaregivers[index].name);
+                                    }
+                                  });
+                                },
+                                isFavorite: favoriteCaregivers.contains(nearbyCaregivers[index].name),
                               ),
                             );
                           },
@@ -1059,7 +1110,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _topRatedCaregivers.length,
+                          itemCount: topRatedCaregivers.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) {
@@ -1078,8 +1129,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ),
                               ),
                               child: _buildCaregiverCard(
-                                _topRatedCaregivers[index],
+                                topRatedCaregivers[index],
                                 isGridView: false,
+                                onFavoriteToggle: () {
+                                  setState(() {
+                                    if (favoriteCaregivers.contains(topRatedCaregivers[index].name)) {
+                                      favoriteCaregivers.remove(topRatedCaregivers[index].name);
+                                    } else {
+                                      favoriteCaregivers.add(topRatedCaregivers[index].name);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Added to favourites'),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  });
+                                },
+                                isFavorite: favoriteCaregivers.contains(topRatedCaregivers[index].name),
                               ),
                             );
                           },
@@ -1178,7 +1245,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCaregiverCard(Caregiver caregiver, {required bool isGridView}) {
+  Widget _buildCaregiverCard(Caregiver caregiver, {
+    required bool isGridView,
+    VoidCallback? onFavoriteToggle,
+    bool isFavorite = false,
+  }) {
     if (isGridView) {
       return Container(
         decoration: BoxDecoration(
@@ -1192,104 +1263,140 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             )
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Stack(
           children: [
-            // Profile Pictures Grid
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                child: Container(
-                  width: double.infinity,
-                  color: const Color(0xFFE8F4F8),
-                  child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Profile Pictures Grid
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
                     ),
-                    itemCount: 6,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        margin: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    caregiver.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF003D66),
+                    child: Container(
+                      width: double.infinity,
+                      color: const Color(0xFFE8F4F8),
+                      child: caregiver.name == 'Sarah Johnson'
+                          ? Image.asset(
+                              'assets/Sarah_Johnson.jpg',
+                              fit: BoxFit.cover,
+                            )
+                          : GridView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                              ),
+                              itemCount: 6,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  margin: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.person,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.star,
-                        color: Color(0xFFFFA500),
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
                       Text(
-                        '${caregiver.rating}',
+                        caregiver.name,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: Color(0xFF003D66),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.location_on,
-                        color: Color(0xFF999999),
-                        size: 12,
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Color(0xFFFFA500),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${caregiver.rating}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF003D66),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.location_on,
+                            color: Color(0xFF999999),
+                            size: 12,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${caregiver.distance} km',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF999999),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(height: 8),
                       Text(
-                        '${caregiver.distance} km',
+                        '\$${caregiver.hourlyRate}/hr',
                         style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF999999),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0099CC),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '\$${caregiver.hourlyRate}/hr',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0099CC),
-                    ),
+                ),
+              ],
+            ),
+            // Heart Icon
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: onFavoriteToggle,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
-                ],
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : const Color(0xFF9AA7B2),
+                    size: 16,
+                  ),
+                ),
               ),
             ),
           ],
@@ -1310,108 +1417,131 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Stack(
           children: [
-            // Profile Pictures
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 80,
-                height: 80,
-                color: const Color(0xFFE8F4F8),
-                child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                  ),
-                  itemCount: 4,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.grey[400],
-                          size: 16,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          caregiver.name,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF003D66),
+            Row(
+              children: [
+                // Profile Pictures
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    color: const Color(0xFFE8F4F8),
+                    child: caregiver.name == 'Sarah Johnson'
+                        ? Image.asset(
+                            'assets/Sarah_Johnson.jpg',
+                            fit: BoxFit.cover,
+                          )
+                        : GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                            ),
+                            itemCount: 4,
+                            itemBuilder: (context, index) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.grey[400],
+                                    size: 16,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                      ),
-                      const Icon(
-                        Icons.verified,
-                        color: Color(0xFF0099CC),
-                        size: 16,
-                      ),
-                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Row(
+                ),
+                const SizedBox(width: 12),
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.star,
-                        color: Color(0xFFFFA500),
-                        size: 13,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              caregiver.name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF003D66),
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.verified,
+                            color: Color(0xFF0099CC),
+                            size: 16,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Color(0xFFFFA500),
+                            size: 13,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${caregiver.rating}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF003D66),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Icon(
+                            Icons.location_on,
+                            color: Color(0xFF999999),
+                            size: 12,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${caregiver.distance} km',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF999999),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        '${caregiver.rating}',
+                        '\$${caregiver.hourlyRate}/hr',
                         style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF003D66),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Icon(
-                        Icons.location_on,
-                        color: Color(0xFF999999),
-                        size: 12,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${caregiver.distance} km',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF999999),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0099CC),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '\$${caregiver.hourlyRate}/hr',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0099CC),
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            // Heart Icon for List View
+            Positioned(
+              bottom: 6,
+              right: 6,
+              child: GestureDetector(
+                onTap: onFavoriteToggle,
+                child: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : const Color(0xFF9AA7B2),
+                  size: 18,
+                ),
               ),
             ),
           ],
@@ -1746,7 +1876,7 @@ class _TrackingScreenState extends State<TrackingScreen>
                     label: 'Profile',
                     isActive: false,
                     onTap: () {
-                      Navigator.of(context).pushReplacementNamed('/login');
+                      Navigator.of(context).pushReplacementNamed('/profile');
                     },
                   ),
                 ],
@@ -1959,6 +2089,701 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
+class FavoritesScreen extends StatefulWidget {
+  const FavoritesScreen({super.key});
+
+  @override
+  State<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+class _FavoritesScreenState extends State<FavoritesScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 900),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, Caregiver> uniqueCaregivers = {
+      for (final caregiver in [...nearbyCaregivers, ...topRatedCaregivers])
+        caregiver.name: caregiver,
+    };
+    final favoriteList = uniqueCaregivers.values
+        .where((caregiver) => favoriteCaregivers.contains(caregiver.name))
+        .toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FB),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F9FB),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF003D66)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Favourites',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF003D66),
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+            child: favoriteList.isEmpty
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.favorite_border,
+                          color: Color(0xFFCCCCCC),
+                          size: 56,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'No favourites yet',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF7B8E9E),
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Add caregivers to your favourites',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF9AA7B2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: favoriteList.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final caregiver = favoriteList[index];
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                width: 74,
+                                height: 74,
+                                color: const Color(0xFFE8F4F8),
+                                child: const Icon(
+                                  Icons.person,
+                                  color: Color(0xFF9AA7B2),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    caregiver.name,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF003D66),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.star,
+                                        color: Color(0xFFFFA500),
+                                        size: 12,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${caregiver.rating}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF003D66),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '\$${caregiver.hourlyRate}/hr',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF0099CC),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${caregiver.distance} km • ${caregiver.specialty}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF7B8E9E),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.favorite,
+                              color: Colors.red,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ManagePetsScreen extends StatefulWidget {
+  const ManagePetsScreen({super.key});
+
+  @override
+  State<ManagePetsScreen> createState() => _ManagePetsScreenState();
+}
+
+class _ManagePetsScreenState extends State<ManagePetsScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 900),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _showPetForm({Pet? pet, int? index}) {
+    final nameController = TextEditingController(text: pet?.name ?? '');
+    final breedController = TextEditingController(text: pet?.breed ?? '');
+    final ageController = TextEditingController(text: pet?.age ?? '');
+    final weightController = TextEditingController(text: pet?.weight ?? '');
+    final imagePicker = ImagePicker();
+    String? tempImagePath = pet?.imagePath;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+        child: StatefulBuilder(
+          builder: (context, setDialogState) => SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        pet == null ? 'Add Pet' : 'Edit Pet',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF003D66),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(
+                          Icons.close,
+                          color: Color(0xFF7B8E9E),
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F9FB),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFE0E8F0),
+                        width: 2,
+                      ),
+                    ),
+                    child: GestureDetector(
+                      onTap: () async {
+                        final picked = await imagePicker.pickImage(
+                          source: ImageSource.gallery,
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            tempImagePath = picked.path;
+                          });
+                        }
+                      },
+                      child: tempImagePath != null && tempImagePath!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.file(
+                                File(tempImagePath!),
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0099CC),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.cloud_upload_outlined,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Upload Pet Image',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0099CC),
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormLabel('Pet Name'),
+                  const SizedBox(height: 8),
+                  _buildFormField(controller: nameController, hintText: 'Enter pet name'),
+                  const SizedBox(height: 16),
+                  _buildFormLabel('Pet Breed'),
+                  const SizedBox(height: 8),
+                  _buildFormField(controller: breedController, hintText: 'Enter pet breed'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFormLabel('Age (years)'),
+                            const SizedBox(height: 8),
+                            _buildFormField(
+                              controller: ageController,
+                              hintText: 'e.g., 3',
+                              keyboardType: TextInputType.number,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFormLabel('Weight (kg)'),
+                            const SizedBox(height: 8),
+                            _buildFormField(
+                              controller: weightController,
+                              hintText: 'e.g., 32',
+                              keyboardType: TextInputType.number,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      if (pet != null)
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                if (index != null) {
+                                  userPets.removeAt(index);
+                                }
+                              });
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFEAEA),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFE84C3D),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (pet != null) const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final newPet = Pet(
+                              name: nameController.text.isEmpty
+                                  ? 'My Pet'
+                                  : nameController.text,
+                              breed: breedController.text.isEmpty
+                                  ? 'Unknown'
+                                  : breedController.text,
+                              age: ageController.text.isEmpty ? '0' : ageController.text,
+                              weight: weightController.text.isEmpty
+                                  ? '0'
+                                  : weightController.text,
+                              imagePath: tempImagePath,
+                            );
+                            setState(() {
+                              if (index != null) {
+                                userPets[index] = newPet;
+                              } else {
+                                userPets.add(newPet);
+                              }
+                            });
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0099CC),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            pet == null ? 'Add Pet' : 'Save Changes',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF003D66),
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String hintText,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF9AA7B2),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Color(0xFFE0E8F0),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Color(0xFFE0E8F0),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Color(0xFF0099CC),
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FB),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F9FB),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF003D66)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Manage Pets',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF003D66),
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Color(0xFF003D66)),
+            onPressed: () => _showPetForm(),
+          ),
+        ],
+      ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+            child: userPets.isEmpty
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.pets,
+                          color: Color(0xFFCCCCCC),
+                          size: 56,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'No pets added yet',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF7B8E9E),
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Add your pets to manage them',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF9AA7B2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: userPets.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final pet = userPets[index];
+                      return GestureDetector(
+                        onTap: () => _showPetForm(pet: pet, index: index),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: Container(
+                                  width: 60,
+                                  height: 60,
+                                  color: const Color(0xFFF0F2F4),
+                                  child: pet.imagePath != null &&
+                                          pet.imagePath!.isNotEmpty
+                                      ? Image.file(
+                                          File(pet.imagePath!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : const Icon(
+                                          Icons.pets,
+                                          color: Color(0xFF9AA7B2),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      pet.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF003D66),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      pet.breed,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF7B8E9E),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${pet.age} years • ${pet.weight} kg',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF7B8E9E),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.edit,
+                                color: Color(0xFF0099CC),
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
@@ -2064,7 +2889,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                // My Pet Card
+                // My Pets Card
                 SlideTransition(
                   position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
                       .animate(
@@ -2093,7 +2918,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'My Pet',
+                            'My Pets',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -2101,69 +2926,97 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ),
                           ),
                           const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF0F2F4),
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                                child: const Icon(
-                                  Icons.pets,
-                                  color: Color(0xFF9AA7B2),
+                          if (userPets.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 10),
+                              child: Text(
+                                'No pets added yet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF7B8E9E),
                                 ),
                               ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      'Max',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF003D66),
+                            )
+                          else
+                            Column(
+                              children: userPets
+                                  .map(
+                                    (pet) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: Row(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(26),
+                                            child: Container(
+                                              width: 52,
+                                              height: 52,
+                                              color: const Color(0xFFF0F2F4),
+                                              child: pet.imagePath != null &&
+                                                      pet.imagePath!.isNotEmpty
+                                                  ? Image.file(
+                                                      File(pet.imagePath!),
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                  : const Icon(
+                                                      Icons.pets,
+                                                      color: Color(0xFF9AA7B2),
+                                                    ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  pet.name,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF003D66),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  pet.breed,
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w400,
+                                                    color: Color(0xFF7B8E9E),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                '${pet.age} years',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color(0xFF7B8E9E),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${pet.weight} kg',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color(0xFF7B8E9E),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Golden Retriever',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                        color: Color(0xFF7B8E9E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: const [
-                                  Text(
-                                    '3 years',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Color(0xFF7B8E9E),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '32 kg',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Color(0xFF7B8E9E),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                  )
+                                  .toList(),
+                            ),
                         ],
                       ),
                     ),
@@ -2262,8 +3115,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _buildSettingRow(Icons.person, 'Edit Profile'),
-                          _buildSettingRow(Icons.favorite_border, 'Favorites'),
+                          _buildSettingRow(Icons.person, 'Manage Pets', onTap: _openManagePetsPage),
+                          _buildSettingRow(Icons.favorite_border, 'Favorites', onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const FavoritesScreen(),
+                              ),
+                            );
+                          }),
                           _buildSettingRow(Icons.calendar_month, 'My Bookings'),
                           _buildSettingRow(Icons.settings, 'Settings'),
                           _buildSettingRow(Icons.logout, 'Logout',
@@ -2399,6 +3258,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       ],
     );
   }
+
+  void _openManagePetsPage() {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => const ManagePetsScreen()))
+        .then((_) => setState(() {}));
+  }
+
+  
 
   Widget _buildSettingRow(IconData icon, String title, {VoidCallback? onTap}) {
     return GestureDetector(
