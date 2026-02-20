@@ -2,9 +2,93 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 void main() {
   runApp(const MyApp());
+}
+
+// Location Service Functions
+Future<void> requestLocationPermission(BuildContext context) async {
+  try {
+    LocationPermission permission = await Geolocator.checkPermission();
+    
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      
+      if (permission == LocationPermission.denied) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission is required to find nearby caregivers')),
+          );
+        }
+        return;
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      if (context.mounted) {
+        _showLocationPermissionDialog(context);
+      }
+      return;
+    }
+    
+    // Get user's current location
+    await getUserLocation();
+  } catch (e) {
+    debugPrint('Error requesting location: $e');
+  }
+}
+
+Future<void> getUserLocation() async {
+  try {
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+    
+    // Convert coordinates to address in English
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+      localeIdentifier: 'en_US',
+    );
+    
+    if (placemarks.isNotEmpty) {
+      Placemark place = placemarks.first;
+      userLocation = '${place.locality}, ${place.administrativeArea}';
+      debugPrint('Updated location: $userLocation');
+    }
+  } catch (e) {
+    debugPrint('Error getting location: $e');
+  }
+}
+
+void _showLocationPermissionDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Location Permission'),
+        content: const Text(
+          'This app needs location access to find caregivers near you. Please enable location permission in settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Geolocator.openLocationSettings();
+              Navigator.of(context).pop();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -50,7 +134,7 @@ class MyApp extends StatelessWidget {
 class BookDateTimeScreen extends StatefulWidget {
   final Caregiver caregiver;
 
-  const BookDateTimeScreen({Key? key, required this.caregiver}) : super(key: key);
+  const BookDateTimeScreen({super.key, required this.caregiver});
 
   @override
   State<BookDateTimeScreen> createState() => _BookDateTimeScreenState();
@@ -457,7 +541,7 @@ class _BookDateTimeScreenState extends State<BookDateTimeScreen> {
 class BookingConfirmationScreen extends StatefulWidget {
   final Booking booking;
 
-  const BookingConfirmationScreen({Key? key, required this.booking}) : super(key: key);
+  const BookingConfirmationScreen({super.key, required this.booking});
 
   @override
   State<BookingConfirmationScreen> createState() => _BookingConfirmationScreenState();
@@ -747,7 +831,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
 
 // Booking History Screen
 class BookingHistoryScreen extends StatelessWidget {
-  const BookingHistoryScreen({Key? key}) : super(key: key);
+  const BookingHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1690,6 +1774,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 }
 
 // Home Screen Models & Classes
+class Review {
+  final String reviewerName;
+  final double rating;
+  final String reviewText;
+  final String petType;
+
+  Review({
+    required this.reviewerName,
+    required this.rating,
+    required this.reviewText,
+    required this.petType,
+  });
+}
+
 class Caregiver {
   final String name;
   final double rating;
@@ -1701,6 +1799,7 @@ class Caregiver {
   final List<String> services;
   final String about;
   final int experience;
+  final List<Review> reviews;
 
   Caregiver({
     required this.name,
@@ -1713,6 +1812,7 @@ class Caregiver {
     required this.services,
     required this.about,
     required this.experience,
+    required this.reviews,
   });
 }
 
@@ -1770,6 +1870,8 @@ final Set<String> favoriteCaregivers = <String>{};
 
 final List<Booking> userBookings = [];
 
+String userLocation = 'San Francisco, CA';
+
 final List<Caregiver> nearbyCaregivers = [
   Caregiver(
     name: 'Sarah Johnson',
@@ -1782,6 +1884,32 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Dog Walking', 'Pet Sitting', 'Dog Training', 'Leash Training', 'Puppy Care', 'Photo Updates'],
     about: 'Professional pet care specialist with 5+ years of experience. Sarah loves all dogs and provides personalized care with daily updates.',
     experience: 5,
+    reviews: [
+      Review(
+        reviewerName: 'John Smith',
+        rating: 5.0,
+        reviewText: 'Sarah is amazing! Max loves her and always comes back happy and tired. Highly recommended!',
+        petType: 'Golden Retriever',
+      ),
+      Review(
+        reviewerName: 'Emily Davis',
+        rating: 4.8,
+        reviewText: 'Very professional and caring. She sends photos during walks which is great peace of mind.',
+        petType: 'Labrador',
+      ),
+      Review(
+        reviewerName: 'Michael Brown',
+        rating: 5.0,
+        reviewText: 'Best dog walker in town. My pup looks forward to walking with Sarah every day!',
+        petType: 'Beagle',
+      ),
+      Review(
+        reviewerName: 'Sarah Williams',
+        rating: 4.7,
+        reviewText: 'Great service and very attentive to my dogs needs. Reliable and trustworthy.',
+        petType: 'Golden Retriever',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Marcus Williams',
@@ -1794,6 +1922,26 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Grooming', 'Dog Bathing', 'Nail Trimming', 'Fur Styling', 'Flea Treatment', 'Ear Cleaning'],
     about: 'Expert groomer with certified training. Marcus specializes in all dog breeds and ensures your pet looks their best.',
     experience: 7,
+    reviews: [
+      Review(
+        reviewerName: 'Lisa Anderson',
+        rating: 5.0,
+        reviewText: 'Marcus groomed my poodle beautifully! Very skilled and gentle with the animals.',
+        petType: 'Poodle',
+      ),
+      Review(
+        reviewerName: 'Robert Johnson',
+        rating: 4.8,
+        reviewText: 'Professional groomer. My dog looks amazing after each session. Definitely worth the price.',
+        petType: 'German Shepherd',
+      ),
+      Review(
+        reviewerName: 'Maria Garcia',
+        rating: 4.7,
+        reviewText: 'Very clean grooming salon and Marcus takes care of anxious dogs very well.',
+        petType: 'Shy Terrier',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Emma Rodriguez',
@@ -1806,6 +1954,32 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Pet Sitting', 'Dog Walking', 'Overnight Care', 'Feeding', 'Medication', 'Playtime'],
     about: 'Compassionate pet sitter who treats every pet like family. Emma offers flexible scheduling and daily photo updates.',
     experience: 6,
+    reviews: [
+      Review(
+        reviewerName: 'James Taylor',
+        rating: 5.0,
+        reviewText: 'Emma stayed with our dog for a week while we traveled. She was wonderful and we felt completely at ease.',
+        petType: 'Boxer Mix',
+      ),
+      Review(
+        reviewerName: 'Patricia Miller',
+        rating: 5.0,
+        reviewText: 'The best pet sitter ever! She gives daily updates and my dog adores her. Worth every penny.',
+        petType: 'Cocker Spaniel',
+      ),
+      Review(
+        reviewerName: 'David Wilson',
+        rating: 4.9,
+        reviewText: 'Reliable, caring, and professional. Emma takes excellent care of our pets when we\'re away.',
+        petType: 'Dachshund',
+      ),
+      Review(
+        reviewerName: 'Jennifer Martinez',
+        rating: 4.9,
+        reviewText: 'Emma is trustworthy and loving. Our senior dog is always happy in her care.',
+        petType: 'Senior Pug',
+      ),
+    ],
   ),
   Caregiver(
     name: 'David Chen',
@@ -1818,6 +1992,32 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Dog Walking', 'Group Walks', 'Exercise Training', 'Park Time', 'Agility Work', 'Fitness'],
     about: 'Athletic and energetic dog walker. David specializes in high-energy dogs and provides structured exercise routines.',
     experience: 4,
+    reviews: [
+      Review(
+        reviewerName: 'Christopher Lee',
+        rating: 4.8,
+        reviewText: 'Perfect for my hyper dog! David provides structured exercise and my dog sleeps well at night.',
+        petType: 'German Shepherd',
+      ),
+      Review(
+        reviewerName: 'Amanda Clark',
+        rating: 4.7,
+        reviewText: 'Great for active dogs. David really knows how to tire them out safely.',
+        petType: 'Husky Mix',
+      ),
+      Review(
+        reviewerName: 'Kevin Robinson',
+        rating: 4.7,
+        reviewText: 'David is energetic and fun. My border collie loves the activity he provides.',
+        petType: 'Border Collie',
+      ),
+      Review(
+        reviewerName: 'Rachel Green',
+        rating: 4.6,
+        reviewText: 'Good walker but sometimes runs a bit late. Still very good overall.',
+        petType: 'Labrador',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Olivia Martinez',
@@ -1830,6 +2030,32 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Medical Care', 'Health Monitoring', 'Medication', 'Vaccination', 'Wound Care', 'Health Coaching'],
     about: 'Licensed veterinary technician with extensive medical knowledge. Olivia provides professional health monitoring and care.',
     experience: 8,
+    reviews: [
+      Review(
+        reviewerName: 'Thomas Anderson',
+        rating: 5.0,
+        reviewText: 'Olivia helped with my dogs rehabilitation after surgery. Very knowledgeable and caring.',
+        petType: 'Post-Surgery Care',
+      ),
+      Review(
+        reviewerName: 'Barbara Thompson',
+        rating: 4.9,
+        reviewText: 'Professional veterinary technician. She managed my dogs medication schedule perfectly.',
+        petType: 'Senior Dog',
+      ),
+      Review(
+        reviewerName: 'Daniel White',
+        rating: 4.8,
+        reviewText: 'Excellent health monitoring. I felt confident leaving my sick dog in her care.',
+        petType: 'Diabetic Dog',
+      ),
+      Review(
+        reviewerName: 'Jessica Harris',
+        rating: 4.7,
+        reviewText: 'Very professional and compassionate. Olivia made my anxious dog feel safe.',
+        petType: 'Anxious Chihuahua',
+      ),
+    ],
   ),
   Caregiver(
     name: 'James Murphy',
@@ -1842,6 +2068,26 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Dog Walking', 'Basic Training', 'Socialization', 'Pickup/Dropoff', 'Rest Time', 'Cleaning'],
     about: 'Friendly dog walker with a passion for helping dogs socialize. James creates a safe and fun environment for all pets.',
     experience: 3,
+    reviews: [
+      Review(
+        reviewerName: 'Matthew Thompson',
+        rating: 4.6,
+        reviewText: 'James is friendly and my dog enjoys his company. Good with young dogs.',
+        petType: 'Labrador Puppy',
+      ),
+      Review(
+        reviewerName: 'Nicole Adams',
+        rating: 4.5,
+        reviewText: 'Good walker, very affordable. My shy dog opened up after a few sessions with James.',
+        petType: 'Shy Cocker Spaniel',
+      ),
+      Review(
+        reviewerName: 'Brandon Clark',
+        rating: 4.7,
+        reviewText: 'Great with dogs! James helped my pup socialize with other dogs at the park.',
+        petType: 'Mixed Breed',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Sophie Bennett',
@@ -1854,6 +2100,32 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Pet Sitting', 'Dog Walking', 'Playdate Coordination', 'Anxiety Support', 'Home Sitting', 'Adventure Time'],
     about: 'Experienced pet sitter with a special touch for anxious pets. Sophie creates calm environments and provides constant care.',
     experience: 6,
+    reviews: [
+      Review(
+        reviewerName: 'Sandra Lopez',
+        rating: 5.0,
+        reviewText: 'Sophie is wonderful with anxious dogs! She helped my rescue puppy feel safe and confident.',
+        petType: 'Rescue Puppy',
+      ),
+      Review(
+        reviewerName: 'Gregory Brown',
+        rating: 4.9,
+        reviewText: 'Amazing sitter. She organized playdates for my dog and it really helped with their socialization.',
+        petType: 'French Bulldog',
+      ),
+      Review(
+        reviewerName: 'Rebecca Johnson',
+        rating: 4.8,
+        reviewText: 'Very caring and attentive. Sophie goes above and beyond for her clients.',
+        petType: 'Cavalier King Charles',
+      ),
+      Review(
+        reviewerName: 'Steven Martinez',
+        rating: 4.9,
+        reviewText: 'Best adventure sitter ever! My dog loves the trips Sophie takes her on.',
+        petType: 'Australian Shepherd',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Michael Torres',
@@ -1866,6 +2138,26 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Full Grooming', 'Spa Treatments', 'Show Prep', 'De-matting', 'Color Treatment', 'Breed Styling'],
     about: 'Professional groomer with show experience. Michael provides premium grooming services tailored to each dog\'s needs.',
     experience: 9,
+    reviews: [
+      Review(
+        reviewerName: 'Angela White',
+        rating: 4.8,
+        reviewText: 'Michael showed my Poodle for a local competition and did an excellent job with styling.',
+        petType: 'Show Poodle',
+      ),
+      Review(
+        reviewerName: 'Mark Harris',
+        rating: 4.7,
+        reviewText: 'Great groomer with lots of experience. My dog looks premium after each session.',
+        petType: 'Maltese',
+      ),
+      Review(
+        reviewerName: 'Karen Peterson',
+        rating: 4.8,
+        reviewText: 'Professional and skilled. Michael noticed my dogs skin issue and suggested I see a vet.',
+        petType: 'Pomeranian',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Lisa Anderson',
@@ -1878,6 +2170,32 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Obedience Training', 'Behavior Correction', 'Puppy Training', 'Aggression Training', 'Anxiety Therapy', 'Commands'],
     about: 'Certified dog trainer specializing in positive reinforcement. Lisa helps dogs learn good behavior in a fun way.',
     experience: 11,
+    reviews: [
+      Review(
+        reviewerName: 'Edward Johnson',
+        rating: 4.9,
+        reviewText: 'Lisa helped my stubborn dog learn obedience. She\'s patient, professional, and results-oriented.',
+        petType: 'Stubborn Terrier',
+      ),
+      Review(
+        reviewerName: 'Susan Miller',
+        rating: 4.8,
+        reviewText: 'Transformed my aggressive rescue dog. Lisa\'s positive reinforcement approach really works.',
+        petType: 'Aggressive Rescue',
+      ),
+      Review(
+        reviewerName: 'Patrick Davis',
+        rating: 4.8,
+        reviewText: 'Excellent trainer! Lisa taught my puppy good behaviors from the start using humane methods.',
+        petType: 'Puppy',
+      ),
+      Review(
+        reviewerName: 'Helen Garcia',
+        rating: 4.7,
+        reviewText: 'Helped my dog overcome anxiety in new situations. Very knowledgeable and compassionate.',
+        petType: 'Anxious Greyhound',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Carlos Rodriguez',
@@ -1890,6 +2208,26 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Dog Walking', 'Adventure Hikes', 'Beach Trips', 'Trail Walks', 'Water Play', 'Outdoor Training'],
     about: 'Adventure-loving dog walker who enjoys outdoor activities. Carlos takes dogs on exciting outings and nature walks.',
     experience: 5,
+    reviews: [
+      Review(
+        reviewerName: 'Frank Williams',
+        rating: 4.7,
+        reviewText: 'Carlos takes my dog on amazing hiking adventures. Perfect for active pups!',
+        petType: 'Golden Retriever',
+      ),
+      Review(
+        reviewerName: 'Michelle Lopez',
+        rating: 4.6,
+        reviewText: 'Great outdoor walker. My beach-loving dog gets plenty of water play time with Carlos.',
+        petType: 'Labrador Mix',
+      ),
+      Review(
+        reviewerName: 'Richard Turner',
+        rating: 4.6,
+        reviewText: 'Good walker for adventurous dogs. Carlos is knowledgeable about outdoor safety.',
+        petType: 'Jack Russell Terrier',
+      ),
+    ],
   ),
   Caregiver(
     name: 'Rachel White',
@@ -1902,6 +2240,32 @@ final List<Caregiver> nearbyCaregivers = [
     services: ['Overnight Sitting', 'Busy Day Care', 'Special Needs Care', 'Senior Dog Care', 'Post-Surgery Care', 'End-of-Life Care'],
     about: 'Premium pet care specialist. Rachel excels at caring for senior pets and dogs with special needs.',
     experience: 10,
+    reviews: [
+      Review(
+        reviewerName: 'Dorothy Nelson',
+        rating: 5.0,
+        reviewText: 'Rachel cared for my senior dog with such compassion and professionalism during his final months. Truly grateful.',
+        petType: 'Senior Labrador',
+      ),
+      Review(
+        reviewerName: 'Joseph Hall',
+        rating: 4.9,
+        reviewText: 'Excellent special needs caregiver. My dog with mobility issues felt safe and comfortable with Rachel.',
+        petType: 'Senior Mobility Needs',
+      ),
+      Review(
+        reviewerName: 'Margaret Scott',
+        rating: 4.9,
+        reviewText: 'Rachel provided overnight care after my dogs surgery. She monitored him carefully and was very attentive.',
+        petType: 'Post-Surgery Dog',
+      ),
+      Review(
+        reviewerName: 'Ronald Green',
+        rating: 4.9,
+        reviewText: 'Premium service for premium care. Rachel goes above and beyond what normal sitters provide.',
+        petType: 'Special Needs Dog',
+      ),
+    ],
   ),
 ];
 
@@ -1917,6 +2281,7 @@ final List<Caregiver> topRatedCaregivers = [
     services: ['Dog Walking', 'Pet Sitting', 'Dog Training'],
     about: 'Professional pet care specialist with 5+ years of experience. Sarah loves all dogs and provides personalized care with daily updates.',
     experience: 5,
+    reviews: [],
   ),
   Caregiver(
     name: 'Marcus Williams',
@@ -1929,6 +2294,7 @@ final List<Caregiver> topRatedCaregivers = [
     services: ['Grooming', 'Dog Bathing', 'Nail Trimming'],
     about: 'Expert groomer with certified training. Marcus specializes in all dog breeds and ensures your pet looks their best.',
     experience: 7,
+    reviews: [],
   ),
   Caregiver(
     name: 'Emma Rodriguez',
@@ -1941,6 +2307,7 @@ final List<Caregiver> topRatedCaregivers = [
     services: ['Pet Sitting', 'Dog Walking', 'Overnight Care'],
     about: 'Compassionate pet sitter who treats every pet like family. Emma offers flexible scheduling and daily photo updates.',
     experience: 6,
+    reviews: [],
   ),
   Caregiver(
     name: 'Olivia Martinez',
@@ -1953,6 +2320,7 @@ final List<Caregiver> topRatedCaregivers = [
     services: ['Medical Care', 'Health Monitoring', 'Medication Administration'],
     about: 'Licensed veterinary technician with extensive medical knowledge. Olivia provides professional health monitoring and care.',
     experience: 8,
+    reviews: [],
   ),
 ];
 
@@ -1977,6 +2345,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       vsync: this,
     );
     _animationController.forward();
+    
+    // Try to get user location when home screen loads
+    getUserLocation();
   }
 
   @override
@@ -2034,9 +2405,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   size: 16,
                                 ),
                                 const SizedBox(width: 6),
-                                const Text(
-                                  'San Francisco, CA',
-                                  style: TextStyle(
+                                Text(
+                                  userLocation,
+                                  style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w400,
                                     color: Colors.white,
@@ -4664,7 +5035,12 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      // Request location permission and get user's location
+      await requestLocationPermission(context);
+      
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
     }
   }
 
@@ -5385,6 +5761,140 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> with Sing
                       ],
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  // Reviews Section
+                  if (widget.caregiver.reviews.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Reviews',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFE8CC),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Color(0xFFFFA500), size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${widget.caregiver.rating}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF003D66),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: widget.caregiver.reviews.length,
+                            itemBuilder: (context, index) {
+                              final review = widget.caregiver.reviews[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey[200]!),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Reviewer Info
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                review.reviewerName,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF003D66),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Pet: ${review.petType}',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w400,
+                                                  color: Color(0xFF999999),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFE8CC),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.star,
+                                                color: Color(0xFFFFA500),
+                                                size: 12,
+                                              ),
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                '${review.rating}',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF003D66),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    // Review Text
+                                    Text(
+                                      review.reviewText,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF666666),
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 24),
                   // Pricing
                   Padding(
