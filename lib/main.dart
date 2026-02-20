@@ -31,7 +31,953 @@ class MyApp extends StatelessWidget {
           final caregiver = ModalRoute.of(context)?.settings.arguments as Caregiver?;
           return caregiver != null ? CaregiverDetailScreen(caregiver: caregiver) : const HomeScreen();
         },
+        '/book-date-time': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final caregiver = args?['caregiver'] as Caregiver?;
+          return caregiver != null ? BookDateTimeScreen(caregiver: caregiver) : const HomeScreen();
+        },
+        '/booking-confirmation': (context) {
+          final booking = ModalRoute.of(context)?.settings.arguments as Booking?;
+          return booking != null ? BookingConfirmationScreen(booking: booking) : const HomeScreen();
+        },
+        '/booking-history': (context) => const BookingHistoryScreen(),
       },
+    );
+  }
+}
+
+// Book Date & Time Screen
+class BookDateTimeScreen extends StatefulWidget {
+  final Caregiver caregiver;
+
+  const BookDateTimeScreen({Key? key, required this.caregiver}) : super(key: key);
+
+  @override
+  State<BookDateTimeScreen> createState() => _BookDateTimeScreenState();
+}
+
+class _BookDateTimeScreenState extends State<BookDateTimeScreen> {
+  late DateTime selectedDate;
+  TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
+  String selectedDuration = '1 hour';
+  late TextEditingController petNameController;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedDate = DateTime.now().add(const Duration(days: 1));
+    petNameController = TextEditingController();
+    petNameController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    petNameController.dispose();
+    super.dispose();
+  }
+
+  double calculatePrice() {
+    int durationValue = int.parse(selectedDuration.split(' ')[0]);
+    return widget.caregiver.hourlyRate * durationValue;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back, color: Color(0xFF003D66), size: 24),
+        ),
+        title: const Text(
+          'Book a Session',
+          style: TextStyle(
+            color: Color(0xFF003D66),
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Caregiver Info Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F8FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF0099CC), width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      image: DecorationImage(
+                        image: AssetImage(_getCaregiverImage(widget.caregiver.name)),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.caregiver.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF003D66),
+                        ),
+                      ),
+                      Text(
+                        '${widget.caregiver.hourlyRate}\$/hour',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0099CC),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Pet Name Input
+            const Text(
+              'Pet Name',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF003D66),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: petNameController,
+              decoration: InputDecoration(
+                hintText: 'Enter your pet\'s name',
+                hintStyle: const TextStyle(color: Color(0xFFB0B0B0)),
+                filled: true,
+                fillColor: const Color(0xFFFAFAFA),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Date Selection
+            const Text(
+              'Select Date',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF003D66),
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 90)),
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: const ColorScheme.light(
+                          primary: Color(0xFF0099CC),
+                          onPrimary: Colors.white,
+                          surface: Colors.white,
+                          onSurface: Color(0xFF003D66),
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (pickedDate != null) {
+                  setState(() {
+                    selectedDate = pickedDate;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF003D66),
+                      ),
+                    ),
+                    const Icon(Icons.calendar_today, color: Color(0xFF0099CC), size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Time Selection
+            const Text(
+              'Select Time',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF003D66),
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () async {
+                final pickedTime = await showTimePicker(
+                  context: context,
+                  initialTime: selectedTime,
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: const ColorScheme.light(
+                          primary: Color(0xFF0099CC),
+                          onPrimary: Colors.white,
+                          surface: Colors.white,
+                          onSurface: Color(0xFF003D66),
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (pickedTime != null) {
+                  setState(() {
+                    selectedTime = pickedTime;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF003D66),
+                      ),
+                    ),
+                    const Icon(Icons.access_time, color: Color(0xFF0099CC), size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Duration Selection
+            const Text(
+              'Session Duration',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF003D66),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: ['1 hour', '2 hours', '3 hours', '4 hours', '6 hours']
+                  .map((duration) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedDuration = duration;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: selectedDuration == duration
+                              ? const Color(0xFF0099CC)
+                              : Colors.white,
+                          border: Border.all(
+                            color: selectedDuration == duration
+                                ? const Color(0xFF0099CC)
+                                : const Color(0xFFE0E0E0),
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          duration,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: selectedDuration == duration
+                                ? Colors.white
+                                : const Color(0xFF003D66),
+                          ),
+                        ),
+                      ),
+                    );
+                  })
+                  .toList(),
+            ),
+            const SizedBox(height: 24),
+
+            // Price Summary
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9F9F9),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total Price',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF003D66),
+                    ),
+                  ),
+                  Text(
+                    '\$${calculatePrice().toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0099CC),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Continue Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: petNameController.text.isEmpty
+                    ? null
+                    : () {
+                        final booking = Booking(
+                          id: 'booking_${DateTime.now().millisecondsSinceEpoch}',
+                          caregiverName: widget.caregiver.name,
+                          caregiverImage: _getCaregiverImage(widget.caregiver.name),
+                          petName: petNameController.text,
+                          bookingDate: selectedDate,
+                          bookingTime: selectedTime,
+                          duration: int.parse(selectedDuration.split(' ')[0]),
+                          totalPrice: calculatePrice(),
+                          createdAt: DateTime.now(),
+                        );
+                        Navigator.pushNamed(
+                          context,
+                          '/booking-confirmation',
+                          arguments: booking,
+                        );
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0099CC),
+                  disabledBackgroundColor: const Color(0xFFCCCCCC),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Continue to Confirmation',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getCaregiverImage(String caregiverName) {
+    final imageMap = {
+      'Sarah Johnson': 'assets/Sarah_Johnson.jpg',
+      'Marcus Williams': 'assets/Marcus_Williams.jpg',
+      'Emma Rodriguez': 'assets/Emma_rodriguez.png',
+      'David Chen': 'assets/David_chen.jpg',
+      'Olivia Martinez': 'assets/olivia_martinez.jpg',
+      'James Murphy': 'assets/james_murphy.jpg',
+      'Sophie Bennett': 'assets/sophie_bennett.jpg',
+      'Michael Torres': 'assets/michael_torres.jpg',
+      'Lisa Anderson': 'assets/lisa_anderson.jpg',
+      'Carlos Rodriguez': 'assets/Carlos_rodriguez.jpg',
+      'Rachel White': 'assets/rachel_white.jpg',
+    };
+    return imageMap[caregiverName] ?? 'assets/Sarah_Johnson.jpg';
+  }
+}
+
+// Booking Confirmation Screen
+class BookingConfirmationScreen extends StatefulWidget {
+  final Booking booking;
+
+  const BookingConfirmationScreen({Key? key, required this.booking}) : super(key: key);
+
+  @override
+  State<BookingConfirmationScreen> createState() => _BookingConfirmationScreenState();
+}
+
+class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _scaleController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+    _scaleController.forward();
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF0F8FF),
+        body: Center(
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Checkmark Animation
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF0099CC),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0099CC).withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 80,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Booking Confirmed!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF003D66),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Your session with ${widget.booking.caregiverName} is confirmed',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Booking Details Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Caregiver Info
+                        Row(
+                          children: [
+                            Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(35),
+                                image: DecorationImage(
+                                  image: AssetImage(widget.booking.caregiverImage),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.booking.caregiverName,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF003D66),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Booking ID: ${widget.booking.id.substring(0, 10)}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF999999),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Divider(color: Color(0xFFE0E0E0), height: 1),
+                        const SizedBox(height: 20),
+
+                        // Booking Details
+                        _buildDetailRow('Pet Name', widget.booking.petName),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          'Date',
+                          '${widget.booking.bookingDate.day}/${widget.booking.bookingDate.month}/${widget.booking.bookingDate.year}',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          'Time',
+                          '${widget.booking.bookingTime.hour.toString().padLeft(2, '0')}:${widget.booking.bookingTime.minute.toString().padLeft(2, '0')}',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          'Duration',
+                          '${widget.booking.duration} hour${widget.booking.duration > 1 ? 's' : ''}',
+                        ),
+                        const SizedBox(height: 20),
+                        const Divider(color: Color(0xFFE0E0E0), height: 1),
+                        const SizedBox(height: 20),
+
+                        // Total Price
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total Amount',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF003D66),
+                              ),
+                            ),
+                            Text(
+                              '\$${widget.booking.totalPrice.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0099CC),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Action Buttons
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        userBookings.add(widget.booking);
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/home',
+                          (route) => false,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Booking confirmed! Check your booking history.'),
+                            backgroundColor: const Color(0xFF0099CC),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0099CC),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/booking-history');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF0099CC), width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'View Booking History',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0099CC),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF666666),
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF003D66),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Booking History Screen
+class BookingHistoryScreen extends StatelessWidget {
+  const BookingHistoryScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back, color: Color(0xFF003D66), size: 24),
+        ),
+        title: const Text(
+          'Booking History',
+          style: TextStyle(
+            color: Color(0xFF003D66),
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: false,
+      ),
+      body: userBookings.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    size: 80,
+                    color: const Color(0xFF0099CC).withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No Bookings Yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF003D66),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Book a caregiver to get started',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0099CC),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Find a Caregiver',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: userBookings.length,
+              itemBuilder: (context, index) {
+                final booking = userBookings[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Caregiver and Date Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(25),
+                                    image: DecorationImage(
+                                      image: AssetImage(booking.caregiverImage),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      booking.caregiverName,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF003D66),
+                                      ),
+                                    ),
+                                    Text(
+                                      booking.petName,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF666666),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0F8FF),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFF0099CC), width: 1),
+                            ),
+                            child: const Text(
+                              'Completed',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0099CC),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(color: Color(0xFFE0E0E0), height: 1),
+                      const SizedBox(height: 12),
+
+                      // Booking Details
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Date & Time',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF999999),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                              Text(
+                                '${booking.bookingTime.hour.toString().padLeft(2, '0')}:${booking.bookingTime.minute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0099CC),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                'Duration & Price',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF999999),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${booking.duration}h',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                              Text(
+                                '\$${booking.totalPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0099CC),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
     );
   }
 }
@@ -256,6 +1202,37 @@ class _OnboardingPageState extends State<OnboardingPage>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  Widget _getImageForCaregiver(String name, bool isGridView) {
+    final Map<String, String> caregiverImages = {
+      'Sarah Johnson': 'assets/Sarah_Johnson.jpg',
+      'Marcus Williams': 'assets/Marcus_Williams.jpg',
+      'Emma Rodriguez': 'assets/Emma_rodriguez.png',
+      'David Chen': 'assets/David_chen.jpg',
+      'Olivia Martinez': 'assets/olivia_martinez.jpg',
+      'James Murphy': 'assets/james_murphy.jpg',
+      'Sophie Bennett': 'assets/sophie_bennett.jpg',
+      'Michael Torres': 'assets/michael_torres.jpg',
+      'Lisa Anderson': 'assets/lisa_anderson.jpg',
+      'Carlos Rodriguez': 'assets/Carlos_rodriguez.jpg',
+      'Rachel White': 'assets/rachel_white.jpg',
+    };
+
+    if (caregiverImages.containsKey(name)) {
+      return Image.asset(
+        caregiverImages[name]!,
+        fit: BoxFit.cover,
+      );
+    }
+
+    return Container(
+      color: const Color(0xFFE8F4F8),
+      child: Icon(
+        Icons.person,
+        color: Colors.grey[400],
+      ),
+    );
   }
 
   @override
@@ -755,6 +1732,30 @@ class Pet {
   });
 }
 
+class Booking {
+  final String id;
+  final String caregiverName;
+  final String caregiverImage;
+  final String petName;
+  final DateTime bookingDate;
+  final TimeOfDay bookingTime;
+  final int duration; // in hours
+  final double totalPrice;
+  final DateTime createdAt;
+
+  Booking({
+    required this.id,
+    required this.caregiverName,
+    required this.caregiverImage,
+    required this.petName,
+    required this.bookingDate,
+    required this.bookingTime,
+    required this.duration,
+    required this.totalPrice,
+    required this.createdAt,
+  });
+}
+
 final List<Pet> userPets = [
   Pet(
     name: 'Max',
@@ -767,6 +1768,8 @@ final List<Pet> userPets = [
 
 final Set<String> favoriteCaregivers = <String>{};
 
+final List<Booking> userBookings = [];
+
 final List<Caregiver> nearbyCaregivers = [
   Caregiver(
     name: 'Sarah Johnson',
@@ -776,7 +1779,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Walking',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Downtown, 2km away',
-    services: ['Dog Walking', 'Pet Sitting', 'Dog Training'],
+    services: ['Dog Walking', 'Pet Sitting', 'Dog Training', 'Leash Training', 'Puppy Care', 'Photo Updates'],
     about: 'Professional pet care specialist with 5+ years of experience. Sarah loves all dogs and provides personalized care with daily updates.',
     experience: 5,
   ),
@@ -788,7 +1791,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Grooming',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Midtown, 1.2km away',
-    services: ['Grooming', 'Dog Bathing', 'Nail Trimming'],
+    services: ['Grooming', 'Dog Bathing', 'Nail Trimming', 'Fur Styling', 'Flea Treatment', 'Ear Cleaning'],
     about: 'Expert groomer with certified training. Marcus specializes in all dog breeds and ensures your pet looks their best.',
     experience: 7,
   ),
@@ -800,7 +1803,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Sitting',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Riverside, 500m away',
-    services: ['Pet Sitting', 'Dog Walking', 'Overnight Care'],
+    services: ['Pet Sitting', 'Dog Walking', 'Overnight Care', 'Feeding', 'Medication', 'Playtime'],
     about: 'Compassionate pet sitter who treats every pet like family. Emma offers flexible scheduling and daily photo updates.',
     experience: 6,
   ),
@@ -812,7 +1815,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Walking',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Westside, 1.5km away',
-    services: ['Dog Walking', 'Group Walks', 'Exercise Training'],
+    services: ['Dog Walking', 'Group Walks', 'Exercise Training', 'Park Time', 'Agility Work', 'Fitness'],
     about: 'Athletic and energetic dog walker. David specializes in high-energy dogs and provides structured exercise routines.',
     experience: 4,
   ),
@@ -824,7 +1827,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Vet',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Healthcare District, 900m away',
-    services: ['Medical Care', 'Health Monitoring', 'Medication Administration'],
+    services: ['Medical Care', 'Health Monitoring', 'Medication', 'Vaccination', 'Wound Care', 'Health Coaching'],
     about: 'Licensed veterinary technician with extensive medical knowledge. Olivia provides professional health monitoring and care.',
     experience: 8,
   ),
@@ -836,7 +1839,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Walking',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Eastside, 1.8km away',
-    services: ['Dog Walking', 'Basic Training', 'Socialization'],
+    services: ['Dog Walking', 'Basic Training', 'Socialization', 'Pickup/Dropoff', 'Rest Time', 'Cleaning'],
     about: 'Friendly dog walker with a passion for helping dogs socialize. James creates a safe and fun environment for all pets.',
     experience: 3,
   ),
@@ -848,7 +1851,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Sitting',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Park View, 700m away',
-    services: ['Pet Sitting', 'Dog Walking', 'Playdate Coordination'],
+    services: ['Pet Sitting', 'Dog Walking', 'Playdate Coordination', 'Anxiety Support', 'Home Sitting', 'Adventure Time'],
     about: 'Experienced pet sitter with a special touch for anxious pets. Sophie creates calm environments and provides constant care.',
     experience: 6,
   ),
@@ -860,7 +1863,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Grooming',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Commerce Ave, 1.3km away',
-    services: ['Full Grooming', 'Spa Treatments', 'Show Prep'],
+    services: ['Full Grooming', 'Spa Treatments', 'Show Prep', 'De-matting', 'Color Treatment', 'Breed Styling'],
     about: 'Professional groomer with show experience. Michael provides premium grooming services tailored to each dog\'s needs.',
     experience: 9,
   ),
@@ -872,7 +1875,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Training',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Learning Center, 1.1km away',
-    services: ['Obedience Training', 'Behavior Correction', 'Puppy Training'],
+    services: ['Obedience Training', 'Behavior Correction', 'Puppy Training', 'Aggression Training', 'Anxiety Therapy', 'Commands'],
     about: 'Certified dog trainer specializing in positive reinforcement. Lisa helps dogs learn good behavior in a fun way.',
     experience: 11,
   ),
@@ -884,7 +1887,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Walking',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Northgate, 2km away',
-    services: ['Dog Walking', 'Adventure Hikes', 'Beach Trips'],
+    services: ['Dog Walking', 'Adventure Hikes', 'Beach Trips', 'Trail Walks', 'Water Play', 'Outdoor Training'],
     about: 'Adventure-loving dog walker who enjoys outdoor activities. Carlos takes dogs on exciting outings and nature walks.',
     experience: 5,
   ),
@@ -896,7 +1899,7 @@ final List<Caregiver> nearbyCaregivers = [
     specialty: 'Sitting',
     profileImages: ['1', '2', '3', '4', '5', '6'],
     location: 'Central Heights, 600m away',
-    services: ['Overnight Sitting', 'Busy Day Care', 'Special Needs Care'],
+    services: ['Overnight Sitting', 'Busy Day Care', 'Special Needs Care', 'Senior Dog Care', 'Post-Surgery Care', 'End-of-Life Care'],
     about: 'Premium pet care specialist. Rachel excels at caring for senior pets and dogs with special needs.',
     experience: 10,
   ),
@@ -1185,54 +2188,59 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ],
                         ),
                         const SizedBox(height: 16),
-                        // Caregivers Grid
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.88,
-                          ),
-                          itemCount: nearbyCaregivers.length,
-                          itemBuilder: (context, index) {
-                            return ScaleTransition(
-                              scale: Tween<double>(begin: 0.7, end: 1).animate(
-                                CurvedAnimation(
-                                  parent: _animationController,
-                                  curve: Interval(
-                                    0.5 + (index * 0.1),
-                                    0.8 + (index * 0.1),
-                                    curve: Curves.easeOut,
+                        // Caregivers Horizontal Carousel - Shows 2 cards with smooth scrolling
+                        SizedBox(
+                          height: 320,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            itemCount: nearbyCaregivers.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  right: 16,
+                                  left: index == 0 ? 0 : 0,
+                                ),
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width / 2 - 28,
+                                  child: ScaleTransition(
+                                    scale: Tween<double>(begin: 0.7, end: 1).animate(
+                                      CurvedAnimation(
+                                        parent: _animationController,
+                                        curve: Interval(
+                                          0.5 + (index * 0.05),
+                                          0.8 + (index * 0.05),
+                                          curve: Curves.easeOut,
+                                        ),
+                                      ),
+                                    ),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).pushNamed(
+                                          '/caregiver-detail',
+                                          arguments: nearbyCaregivers[index],
+                                        );
+                                      },
+                                      child: _buildCaregiverCard(
+                                        nearbyCaregivers[index],
+                                        isGridView: true,
+                                        onFavoriteToggle: () {
+                                          setState(() {
+                                            if (favoriteCaregivers.contains(nearbyCaregivers[index].name)) {
+                                              favoriteCaregivers.remove(nearbyCaregivers[index].name);
+                                            } else {
+                                              favoriteCaregivers.add(nearbyCaregivers[index].name);
+                                            }
+                                          });
+                                        },
+                                        isFavorite: favoriteCaregivers.contains(nearbyCaregivers[index].name),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).pushNamed(
-                                    '/caregiver-detail',
-                                    arguments: nearbyCaregivers[index],
-                                  );
-                                },
-                                child: _buildCaregiverCard(
-                                  nearbyCaregivers[index],
-                                  isGridView: true,
-                                  onFavoriteToggle: () {
-                                    setState(() {
-                                      if (favoriteCaregivers.contains(nearbyCaregivers[index].name)) {
-                                        favoriteCaregivers.remove(nearbyCaregivers[index].name);
-                                      } else {
-                                        favoriteCaregivers.add(nearbyCaregivers[index].name);
-                                      }
-                                    });
-                                  },
-                                  isFavorite: favoriteCaregivers.contains(nearbyCaregivers[index].name),
-                                ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
@@ -1408,6 +2416,55 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  // Helper method to get the correct image for a caregiver
+  Widget _getImageForCaregiver(String name, bool isGridView) {
+    final Map<String, String> caregiverImages = {
+      'Sarah Johnson': 'assets/Sarah_Johnson.jpg',
+      'Marcus Williams': 'assets/Marcus_Williams.jpg',
+      'Emma Rodriguez': 'assets/Emma_rodriguez.png',
+      'David Chen': 'assets/David_chen.jpg',
+      'Olivia Martinez': 'assets/olivia_martinez.jpg',
+      'James Murphy': 'assets/james_murphy.jpg',
+      'Sophie Bennett': 'assets/sophie_bennett.jpg',
+      'Michael Torres': 'assets/michael_torres.jpg',
+      'Lisa Anderson': 'assets/lisa_anderson.jpg',
+      'Carlos Rodriguez': 'assets/Carlos_rodriguez.jpg',
+      'Rachel White': 'assets/rachel_white.jpg',
+    };
+
+    if (caregiverImages.containsKey(name)) {
+      return Image.asset(
+        caregiverImages[name]!,
+        fit: BoxFit.cover,
+      );
+    }
+
+    // Fallback grid view
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isGridView ? 3 : 2,
+      ),
+      itemCount: isGridView ? 6 : 4,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.person,
+              color: Colors.grey[400],
+              size: isGridView ? null : 16,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCaregiverCard(Caregiver caregiver, {
     required bool isGridView,
     VoidCallback? onFavoriteToggle,
@@ -1441,39 +2498,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: Container(
                       width: double.infinity,
                       color: const Color(0xFFE8F4F8),
-                      child: caregiver.name == 'Sarah Johnson'
-                          ? Image.asset(
-                              'assets/Sarah_Johnson.jpg',
-                              fit: BoxFit.cover,
-                            )
-                          : caregiver.name == 'Marcus Williams'
-                              ? Image.asset(
-                                  'assets/Marcus_Williams.jpg',
-                                  fit: BoxFit.cover,
-                                )
-                              : GridView.builder(
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                  ),
-                                  itemCount: 6,
-                                  itemBuilder: (context, index) {
-                                    return Container(
-                                      margin: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Center(
-                                        child: Icon(
-                                          Icons.person,
-                                          color: Colors.grey[400],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
+                      child: _getImageForCaregiver(caregiver.name, isGridView),
                     ),
                   ),
                 ),
@@ -1596,38 +2621,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     width: 80,
                     height: 80,
                     color: const Color(0xFFE8F4F8),
-                    child: caregiver.name == 'Sarah Johnson'
-                        ? Image.asset(
-                            'assets/Sarah_Johnson.jpg',
-                            fit: BoxFit.cover,
-                          )
-                        : caregiver.name == 'Marcus Williams'
-                            ? Image.asset(
-                                'assets/Marcus_Williams.jpg',
-                                fit: BoxFit.cover,
-                              )
-                            : GridView.builder(
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                ),
-                                itemCount: 4,
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.grey[400],
-                                        size: 16,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
+                    child: _getImageForCaregiver(caregiver.name, false),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -2304,6 +3298,37 @@ class _FavoritesScreenState extends State<FavoritesScreen>
     super.dispose();
   }
 
+  Widget _getImageForCaregiver(String name, bool isGridView) {
+    final Map<String, String> caregiverImages = {
+      'Sarah Johnson': 'assets/Sarah_Johnson.jpg',
+      'Marcus Williams': 'assets/Marcus_Williams.jpg',
+      'Emma Rodriguez': 'assets/Emma_rodriguez.png',
+      'David Chen': 'assets/David_chen.jpg',
+      'Olivia Martinez': 'assets/olivia_martinez.jpg',
+      'James Murphy': 'assets/james_murphy.jpg',
+      'Sophie Bennett': 'assets/sophie_bennett.jpg',
+      'Michael Torres': 'assets/michael_torres.jpg',
+      'Lisa Anderson': 'assets/lisa_anderson.jpg',
+      'Carlos Rodriguez': 'assets/Carlos_rodriguez.jpg',
+      'Rachel White': 'assets/rachel_white.jpg',
+    };
+
+    if (caregiverImages.containsKey(name)) {
+      return Image.asset(
+        caregiverImages[name]!,
+        fit: BoxFit.cover,
+      );
+    }
+
+    return Container(
+      color: const Color(0xFFE8F4F8),
+      child: Icon(
+        Icons.person,
+        color: Colors.grey[400],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Map<String, Caregiver> uniqueCaregivers = {
@@ -2404,10 +3429,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                                   width: 74,
                                   height: 74,
                                   color: const Color(0xFFE8F4F8),
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: Color(0xFF9AA7B2),
-                                  ),
+                                  child: _getImageForCaregiver(caregiver.name, false),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -4014,6 +5036,50 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> with Sing
     super.dispose();
   }
 
+  // Helper to get correct image for detail screen
+  Widget _getCaregiverDetailImage(String name) {
+    final Map<String, String> caregiverImages = {
+      'Sarah Johnson': 'assets/Sarah_Johnson.jpg',
+      'Marcus Williams': 'assets/Marcus_Williams.jpg',
+      'Emma Rodriguez': 'assets/Emma_rodriguez.png',
+      'David Chen': 'assets/David_chen.jpg',
+      'Olivia Martinez': 'assets/olivia_martinez.jpg',
+      'James Murphy': 'assets/james_murphy.jpg',
+      'Sophie Bennett': 'assets/sophie_bennett.jpg',
+      'Michael Torres': 'assets/michael_torres.jpg',
+      'Lisa Anderson': 'assets/lisa_anderson.jpg',
+      'Carlos Rodriguez': 'assets/Carlos_rodriguez.jpg',
+      'Rachel White': 'assets/rachel_white.jpg',
+    };
+
+    if (caregiverImages.containsKey(name)) {
+      return Image.asset(
+        caregiverImages[name]!,
+        fit: BoxFit.cover,
+      );
+    }
+
+    // Fallback grid
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: List.generate(
+        9,
+        (index) => Container(
+          color: Colors.grey[300],
+          child: Center(
+            child: Icon(
+              Icons.person,
+              color: Colors.grey[400],
+              size: 30,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -4035,34 +5101,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> with Sing
                     width: double.infinity,
                     height: 300,
                     color: const Color(0xFFE8F4F8),
-                    child: widget.caregiver.name == 'Sarah Johnson'
-                        ? Image.asset(
-                            'assets/Sarah_Johnson.jpg',
-                            fit: BoxFit.cover,
-                          )
-                        : widget.caregiver.name == 'Marcus Williams'
-                            ? Image.asset(
-                                'assets/Marcus_Williams.jpg',
-                                fit: BoxFit.cover,
-                              )
-                            : GridView.count(
-                                crossAxisCount: 3,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                children: List.generate(
-                                  9,
-                                  (index) => Container(
-                                    color: Colors.grey[300],
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.grey[400],
-                                        size: 30,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                    child: _getCaregiverDetailImage(widget.caregiver.name),
                   ),
                   // Gradient Overlay
                   Container(
@@ -4425,12 +5464,10 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> with Sing
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         child: ElevatedButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Booking slot with ${widget.caregiver.name}...'),
-                duration: const Duration(seconds: 2),
-                backgroundColor: const Color(0xFF0099CC),
-              ),
+            Navigator.pushNamed(
+              context,
+              '/book-date-time',
+              arguments: {'caregiver': widget.caregiver},
             );
           },
           style: ElevatedButton.styleFrom(
