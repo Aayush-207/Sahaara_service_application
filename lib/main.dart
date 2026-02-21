@@ -125,6 +125,7 @@ class MyApp extends StatelessWidget {
           return booking != null ? BookingConfirmationScreen(booking: booking) : const HomeScreen();
         },
         '/booking-history': (context) => const BookingHistoryScreen(),
+        '/all-caregivers': (context) => const AllCaregiversScreen(),
       },
     );
   }
@@ -830,8 +831,174 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
 }
 
 // Booking History Screen
-class BookingHistoryScreen extends StatelessWidget {
+class BookingHistoryScreen extends StatefulWidget {
   const BookingHistoryScreen({super.key});
+
+  @override
+  State<BookingHistoryScreen> createState() => _BookingHistoryScreenState();
+}
+
+class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
+  final List<String> cancellationReasons = [
+    'Change of plans',
+    'Found another caregiver',
+    'Schedule conflict',
+    'Pet became unavailable',
+    'Too expensive',
+    'Other reason',
+  ];
+
+  void _showCancellationDialog(Booking booking, int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cancel Booking?'),
+          content: const Text(
+            'Are you sure you want to cancel this booking? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Keep Booking'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showReasonDialog(booking, index);
+              },
+              child: const Text(
+                'Yes, Cancel',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showReasonDialog(Booking booking, int index) {
+    String? selectedReason;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Cancellation Reason'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Please select a reason for cancellation:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ...cancellationReasons.map(
+                      (reason) => GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedReason = reason;
+                          });
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: selectedReason == reason
+                                ? const Color(0xFFE0F3FF)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: selectedReason == reason
+                                  ? const Color(0xFF0099CC)
+                                  : const Color(0xFFE0E0E0),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: selectedReason == reason
+                                        ? const Color(0xFF0099CC)
+                                        : const Color(0xFFCCCCCC),
+                                  ),
+                                ),
+                                child: selectedReason == reason
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 14,
+                                        color: Color(0xFF0099CC),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  reason,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF003D66),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Back'),
+                ),
+                ElevatedButton(
+                  onPressed: selectedReason != null
+                      ? () {
+                          setState(() {
+                            booking.status = 'cancelled';
+                            booking.cancellationReason = selectedReason;
+                          });
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Booking cancelled successfully'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  child: const Text(
+                    'Confirm Cancellation',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -844,7 +1011,7 @@ class BookingHistoryScreen extends StatelessWidget {
           child: const Icon(Icons.arrow_back, color: Color(0xFF003D66), size: 24),
         ),
         title: const Text(
-          'Booking History',
+          'My Bookings',
           style: TextStyle(
             color: Color(0xFF003D66),
             fontSize: 18,
@@ -853,6 +1020,7 @@ class BookingHistoryScreen extends StatelessWidget {
         ),
         centerTitle: false,
       ),
+      backgroundColor: const Color(0xFFF5F9FB),
       body: userBookings.isEmpty
           ? Center(
               child: Column(
@@ -908,160 +1076,753 @@ class BookingHistoryScreen extends StatelessWidget {
               itemCount: userBookings.length,
               itemBuilder: (context, index) {
                 final booking = userBookings[index];
+                final isUpcoming = booking.isUpcoming;
+                final isCancelled = booking.isCancelled;
+
+                // Status color based on booking status
+                Color statusColor = isCancelled
+                    ? Colors.red
+                    : isUpcoming
+                        ? const Color(0xFF0099CC)
+                        : Colors.green;
+                Color statusBgColor = isCancelled
+                    ? const Color(0xFFFFEBEE)
+                    : isUpcoming
+                        ? const Color(0xFFE0F3FF)
+                        : const Color(0xFFE8F5E9);
+                String statusText = isCancelled
+                    ? 'Cancelled'
+                    : isUpcoming
+                        ? 'Upcoming'
+                        : 'Completed';
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        spreadRadius: 1,
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Caregiver and Date Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
+                      // Header with Status
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      image: DecorationImage(
+                                        image: AssetImage(booking.caregiverImage),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          booking.caregiverName,
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF003D66),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Pet: ${booking.petName}',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF666666),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: statusBgColor,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: statusColor, width: 1),
+                              ),
+                              child: Text(
+                                statusText,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: Color(0xFFE8E8E8)),
+                      // Booking Details
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date and Time
+                            Row(
                               children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(25),
-                                    image: DecorationImage(
-                                      image: AssetImage(booking.caregiverImage),
-                                      fit: BoxFit.cover,
+                                Icon(
+                                  Icons.calendar_month,
+                                  size: 18,
+                                  color: const Color(0xFF0099CC),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year} at ${booking.bookingTime.hour.toString().padLeft(2, '0')}:${booking.bookingTime.minute.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF003D66),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Duration and Price
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.schedule,
+                                  size: 18,
+                                  color: const Color(0xFF0099CC),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Duration: ${booking.duration} hours',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF003D66),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      booking.caregiverName,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF003D66),
-                                      ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF5F5F5),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '\$${booking.totalPrice.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF0099CC),
                                     ),
-                                    Text(
-                                      booking.petName,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF666666),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Cancellation Reason (if cancelled)
+                            if (isCancelled && booking.cancellationReason != null) ...
+[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFEBEE),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.info,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Cancelled: ${booking.cancellationReason}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.red,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0F8FF),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFF0099CC), width: 1),
-                            ),
-                            child: const Text(
-                              'Completed',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0099CC),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Divider(color: Color(0xFFE0E0E0), height: 1),
-                      const SizedBox(height: 12),
-
-                      // Booking Details
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Date & Time',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF999999),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF003D66),
-                                ),
-                              ),
-                              Text(
-                                '${booking.bookingTime.hour.toString().padLeft(2, '0')}:${booking.bookingTime.minute.toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF0099CC),
-                                ),
                               ),
                             ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const Text(
-                                'Duration & Price',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF999999),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${booking.duration}h',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF003D66),
-                                ),
-                              ),
-                              Text(
-                                '\$${booking.totalPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF0099CC),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      // Cancel Button (only for upcoming bookings)
+                      if (isUpcoming && !isCancelled)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => _showCancellationDialog(booking, index),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.withOpacity(0.1),
+                                side: const BorderSide(color: Colors.red),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: const Text(
+                                'Cancel Booking',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 );
               },
             ),
+    );
+  }
+}
+
+// All Caregivers Screen with Filters and Sorting
+class AllCaregiversScreen extends StatefulWidget {
+  const AllCaregiversScreen({super.key});
+
+  @override
+  State<AllCaregiversScreen> createState() => _AllCaregiversScreenState();
+}
+
+class _AllCaregiversScreenState extends State<AllCaregiversScreen> {
+  String selectedSpecialty = 'All';
+  String selectedSort = 'Rating';
+  String searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  final List<String> specialties = ['All', 'Walking', 'Grooming', 'Sitting', 'Vet', 'Training'];
+  final List<String> sortOptions = ['Rating', 'Price (Low to High)', 'Price (High to Low)', 'Distance', 'Experience'];
+
+  List<Caregiver> get filteredAndSortedCaregivers {
+    // Filter by specialty
+    List<Caregiver> filtered = selectedSpecialty == 'All'
+        ? List.from(nearbyCaregivers)
+        : nearbyCaregivers.where((c) => c.specialty == selectedSpecialty).toList();
+
+    // Filter by search query
+    if (searchQuery.isNotEmpty) {
+      filtered = filtered.where((c) {
+        return c.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            c.specialty.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            c.services.any((s) => s.toLowerCase().contains(searchQuery.toLowerCase()));
+      }).toList();
+    }
+
+    // Sort
+    switch (selectedSort) {
+      case 'Rating':
+        filtered.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'Price (Low to High)':
+        filtered.sort((a, b) => a.hourlyRate.compareTo(b.hourlyRate));
+        break;
+      case 'Price (High to Low)':
+        filtered.sort((a, b) => b.hourlyRate.compareTo(a.hourlyRate));
+        break;
+      case 'Distance':
+        filtered.sort((a, b) => a.distance.compareTo(b.distance));
+        break;
+      case 'Experience':
+        filtered.sort((a, b) => b.experience.compareTo(a.experience));
+        break;
+    }
+
+    return filtered;
+  }
+
+  String _getImageForCaregiver(String name) {
+    final Map<String, String> caregiverImages = {
+      'Sarah Johnson': 'assets/Sarah_Johnson.jpg',
+      'Marcus Williams': 'assets/Marcus_Williams.jpg',
+      'Emma Rodriguez': 'assets/Emma_rodriguez.png',
+      'David Chen': 'assets/David_chen.jpg',
+      'Olivia Martinez': 'assets/olivia_martinez.jpg',
+      'James Murphy': 'assets/james_murphy.jpg',
+      'Sophie Bennett': 'assets/sophie_bennett.jpg',
+      'Michael Torres': 'assets/michael_torres.jpg',
+      'Lisa Anderson': 'assets/lisa_anderson.jpg',
+      'Carlos Rodriguez': 'assets/Carlos_rodriguez.jpg',
+      'Rachel White': 'assets/rachel_white.jpg',
+    };
+    return caregiverImages[name] ?? 'assets/Sarah_Johnson.jpg';
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final caregivers = filteredAndSortedCaregivers;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FB),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0099CC),
+        elevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+        ),
+        title: const Text(
+          'All Caregivers',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          // Search and Sort Header
+          Container(
+            color: const Color(0xFF0099CC),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              children: [
+                // Search Bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search caregivers...',
+                      hintStyle: const TextStyle(
+                        color: Color(0xFFAAAAAA),
+                        fontSize: 15,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Color(0xFF0099CC),
+                        size: 22,
+                      ),
+                      suffixIcon: searchQuery.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  searchQuery = '';
+                                });
+                              },
+                              child: const Icon(
+                                Icons.clear,
+                                color: Color(0xFF999999),
+                                size: 20,
+                              ),
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Sort Dropdown
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.sort,
+                        color: Color(0xFF0099CC),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Sort by:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF003D66),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButton<String>(
+                          value: selectedSort,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF0099CC)),
+                          items: sortOptions.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF003D66),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                selectedSort = newValue;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Filter Chips
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            color: Colors.white,
+            child: SizedBox(
+              height: 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: specialties.length,
+                itemBuilder: (context, index) {
+                  final specialty = specialties[index];
+                  final isSelected = selectedSpecialty == specialty;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedSpecialty = specialty;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF0099CC) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF0099CC) : const Color(0xFFE0E0E0),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            specialty,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected ? Colors.white : const Color(0xFF666666),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          // Results Count
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Text(
+                  '${caregivers.length} Caregiver${caregivers.length != 1 ? 's' : ''} Found',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF003D66),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Caregivers Grid
+          Expanded(
+            child: caregivers.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: const Color(0xFF0099CC).withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No caregivers found',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF666666),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Try adjusting your filters',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF999999),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: caregivers.length,
+                    itemBuilder: (context, index) {
+                      final caregiver = caregivers[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/caregiver-detail',
+                            arguments: caregiver,
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Image
+                              Container(
+                                height: 140,
+                                decoration: BoxDecoration(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(16),
+                                  ),
+                                  image: DecorationImage(
+                                    image: AssetImage(_getImageForCaregiver(caregiver.name)),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.star,
+                                              color: Color(0xFFFFA500),
+                                              size: 14,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${caregiver.rating}',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF003D66),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      left: 8,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            if (favoriteCaregivers.contains(caregiver.name)) {
+                                              favoriteCaregivers.remove(caregiver.name);
+                                            } else {
+                                              favoriteCaregivers.add(caregiver.name);
+                                            }
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            favoriteCaregivers.contains(caregiver.name)
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            color: favoriteCaregivers.contains(caregiver.name)
+                                                ? Colors.red
+                                                : const Color(0xFF999999),
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Details
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        caregiver.name,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF003D66),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F3FF),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          caregiver.specialty,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF0099CC),
+                                          ),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.location_on,
+                                            size: 14,
+                                            color: Color(0xFF999999),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${caregiver.distance} km',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF666666),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '\$${caregiver.hourlyRate}/hr',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF0099CC),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${caregiver.experience}y exp',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF666666),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1842,6 +2603,8 @@ class Booking {
   final int duration; // in hours
   final double totalPrice;
   final DateTime createdAt;
+  String status; // 'upcoming', 'completed', or 'cancelled'
+  String? cancellationReason;
 
   Booking({
     required this.id,
@@ -1853,7 +2616,12 @@ class Booking {
     required this.duration,
     required this.totalPrice,
     required this.createdAt,
+    this.status = 'upcoming',
+    this.cancellationReason,
   });
+  
+  bool get isUpcoming => bookingDate.isAfter(DateTime.now()) && status == 'upcoming';
+  bool get isCancelled => status == 'cancelled';
 }
 
 final List<Pet> userPets = [
@@ -2546,7 +3314,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                             ),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.pushNamed(context, '/all-caregivers');
+                              },
                               child: const Text(
                                 'See All',
                                 style: TextStyle(
@@ -4697,7 +5467,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                             );
                           }),
-                          _buildSettingRow(Icons.calendar_month, 'My Bookings'),
+                          _buildSettingRow(Icons.calendar_month, 'My Bookings', onTap: () {
+                            Navigator.of(context).pushNamed('/booking-history');
+                          }),
                           _buildSettingRow(Icons.settings, 'Settings'),
                           _buildSettingRow(Icons.logout, 'Logout',
                               onTap: () {
