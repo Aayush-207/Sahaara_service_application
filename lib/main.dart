@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -2636,7 +2639,44 @@ final List<Pet> userPets = [
 
 final Set<String> favoriteCaregivers = <String>{};
 
-final List<Booking> userBookings = [];
+final List<Booking> userBookings = [
+  Booking(
+    id: 'B001',
+    caregiverName: 'Emily Davis',
+    caregiverImage: '4',
+    petName: 'Max',
+    bookingDate: DateTime.now().subtract(const Duration(days: 3)),
+    bookingTime: const TimeOfDay(hour: 10, minute: 0),
+    duration: 3,
+    totalPrice: 105.0,
+    createdAt: DateTime.now().subtract(const Duration(days: 5)),
+    status: 'completed',
+  ),
+  Booking(
+    id: 'B002',
+    caregiverName: 'Michael Brown',
+    caregiverImage: '3',
+    petName: 'Luna',
+    bookingDate: DateTime.now().subtract(const Duration(days: 7)),
+    bookingTime: const TimeOfDay(hour: 14, minute: 30),
+    duration: 2,
+    totalPrice: 60.0,
+    createdAt: DateTime.now().subtract(const Duration(days: 9)),
+    status: 'completed',
+  ),
+  Booking(
+    id: 'B003',
+    caregiverName: 'Sarah Johnson',
+    caregiverImage: '1',
+    petName: 'Buddy',
+    bookingDate: DateTime.now().subtract(const Duration(days: 14)),
+    bookingTime: const TimeOfDay(hour: 9, minute: 0),
+    duration: 4,
+    totalPrice: 100.0,
+    createdAt: DateTime.now().subtract(const Duration(days: 16)),
+    status: 'completed',
+  ),
+];
 
 String userLocation = 'San Francisco, CA';
 
@@ -3218,70 +3258,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Category Filter
-              SliverToBoxAdapter(
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-                      .animate(
-                    CurvedAnimation(
-                      parent: _animationController,
-                      curve: const Interval(0.3, 0.6, curve: Curves.easeOut),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(
-                          _categories.length,
-                          (index) => GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedCategory = index;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.only(right: 12),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _selectedCategory == index
-                                    ? const Color(0xFF0099CC)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: _selectedCategory == index
-                                    ? [
-                                        BoxShadow(
-                                          color: const Color(0xFF0099CC)
-                                              .withOpacity(0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        )
-                                      ]
-                                    : [],
-                              ),
-                              child: Text(
-                                _categories[index],
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: _selectedCategory == index
-                                      ? Colors.white
-                                      : const Color(0xFF4A7C99),
-                                ),
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     ),
