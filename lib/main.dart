@@ -5,11 +5,80 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(const MyApp());
+}
+
+// Google Sign-In Function
+Future<UserCredential?> signInWithGoogle(BuildContext context) async {
+  try {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0099CC)),
+        ),
+      ),
+    );
+
+    // Trigger the authentication flow
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+    // If user cancels the sign-in
+    if (googleUser == null) {
+      Navigator.of(context).pop(); // Close loading dialog
+      return null;
+    }
+
+    // Obtain the auth details from the request
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+    // Create a new credential
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    // Sign in to Firebase with the Google credential
+    final UserCredential userCredential = 
+        await FirebaseAuth.instance.signInWithCredential(credential);
+
+    Navigator.of(context).pop(); // Close loading dialog
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Welcome ${userCredential.user?.displayName ?? "User"}!'),
+        backgroundColor: const Color(0xFF0099CC),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Navigate to home screen
+    Navigator.pushReplacementNamed(context, '/home');
+
+    return userCredential;
+  } catch (e) {
+    // Close loading dialog if open
+    Navigator.of(context, rootNavigator: true).pop();
+    
+    // Show error message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Google Sign-In failed: ${e.toString()}'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+    return null;
+  }
 }
 
 // Location Service Functions
@@ -2447,7 +2516,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           children: [
                             // Google Button
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () => signInWithGoogle(context),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -6036,7 +6105,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                           children: [
                             // Google Button
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () => signInWithGoogle(context),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
