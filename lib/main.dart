@@ -8,6 +8,28 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+class UserProfile {
+  UserProfile({
+    required this.name,
+    required this.email,
+    required this.password,
+    this.photoUrl,
+    this.photoPath,
+  });
+
+  String name;
+  String email;
+  String password;
+  String? photoUrl;
+  String? photoPath;
+}
+
+UserProfile currentUserProfile = UserProfile(
+  name: '',
+  email: '',
+  password: '',
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -49,6 +71,14 @@ Future<UserCredential?> signInWithGoogle(BuildContext context) async {
     // Sign in to Firebase with the Google credential
     final UserCredential userCredential = 
         await FirebaseAuth.instance.signInWithCredential(credential);
+
+    final user = userCredential.user;
+    currentUserProfile = UserProfile(
+      name: user?.displayName ?? 'User',
+      email: user?.email ?? '',
+      password: 'Google Sign-In',
+      photoUrl: user?.photoURL,
+    );
 
     Navigator.of(context).pop(); // Close loading dialog
 
@@ -198,6 +228,7 @@ class MyApp extends StatelessWidget {
         },
         '/booking-history': (context) => const BookingHistoryScreen(),
         '/all-caregivers': (context) => const AllCaregiversScreen(),
+        '/edit-profile': (context) => const EditProfileScreen(),
       },
     );
   }
@@ -2303,6 +2334,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     // Simulate a small delay for UI feedback
     await Future.delayed(const Duration(milliseconds: 500));
 
+    final email = _emailController.text.trim();
+    final nameFromEmail = email.contains('@')
+      ? email.split('@').first
+      : 'User';
+    final resolvedName =
+      currentUserProfile.email == email && currentUserProfile.name.isNotEmpty
+        ? currentUserProfile.name
+        : nameFromEmail;
+    currentUserProfile = UserProfile(
+      name: resolvedName,
+      email: email,
+      password: _passwordController.text,
+      photoUrl: currentUserProfile.photoUrl,
+      photoPath: currentUserProfile.photoPath,
+    );
+
     if (mounted) {
       Navigator.of(context).pushReplacementNamed('/home');
     }
@@ -3235,6 +3282,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final displayName =
+        currentUserProfile.name.isNotEmpty ? currentUserProfile.name : 'Guest';
+    final displayEmail =
+        currentUserProfile.email.isNotEmpty ? currentUserProfile.email : 'No email';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FB),
       body: Stack(
@@ -3934,6 +3986,12 @@ class _TrackingScreenState extends State<TrackingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final displayName =
+        currentUserProfile.name.isNotEmpty ? currentUserProfile.name : 'Guest';
+    final displayEmail = currentUserProfile.email.isNotEmpty
+        ? currentUserProfile.email
+        : 'No email';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FB),
       body: Stack(
@@ -5177,6 +5235,37 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
 
+  Widget _buildProfileAvatar() {
+    if (currentUserProfile.photoPath != null &&
+        currentUserProfile.photoPath!.isNotEmpty) {
+      return Image.file(
+        File(currentUserProfile.photoPath!),
+        fit: BoxFit.cover,
+      );
+    }
+
+    if (currentUserProfile.photoUrl != null &&
+        currentUserProfile.photoUrl!.isNotEmpty) {
+      return Image.network(
+        currentUserProfile.photoUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(
+            Icons.person,
+            color: Colors.grey[400],
+            size: 28,
+          );
+        },
+      );
+    }
+
+    return Icon(
+      Icons.person,
+      color: Colors.grey[400],
+      size: 28,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -5195,6 +5284,12 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final displayName =
+        currentUserProfile.name.isNotEmpty ? currentUserProfile.name : 'Guest';
+    final displayEmail = currentUserProfile.email.isNotEmpty
+        ? currentUserProfile.email
+        : 'No email';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FB),
       body: Stack(
@@ -5230,42 +5325,25 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(32),
-                            child: GridView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                              ),
-                              itemCount: 4,
-                              itemBuilder: (context, index) {
-                                return Container(
-                                  color: Colors.grey[300],
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.grey[400],
-                                    size: 18,
-                                  ),
-                                );
-                              },
-                            ),
+                            child: _buildProfileAvatar(),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
-                              'Aayush',
-                              style: TextStyle(
+                              displayName,
+                              style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              'aayush@pettrust.com',
-                              style: TextStyle(
+                              displayEmail,
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w400,
                                 color: Colors.white,
@@ -5515,7 +5593,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                           _buildSettingRow(Icons.calendar_month, 'My Bookings', onTap: () {
                             Navigator.of(context).pushNamed('/booking-history');
                           }),
-                          _buildSettingRow(Icons.settings, 'Settings'),
+                          _buildSettingRow(Icons.edit, 'Edit Profile', onTap: () {
+                            Navigator.of(context).pushNamed('/edit-profile');
+                          }),
                           _buildSettingRow(Icons.logout, 'Logout',
                               onTap: () {
                             Navigator.of(context).pushReplacementNamed('/login');
@@ -5736,6 +5816,112 @@ class _ProfileScreenState extends State<ProfileScreen>
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: isActive ? const Color(0xFF003D66) : const Color(0xFF9AA7B2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class EditProfileScreen extends StatelessWidget {
+  const EditProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName =
+        currentUserProfile.name.isNotEmpty ? currentUserProfile.name : 'Guest';
+    final displayEmail =
+        currentUserProfile.email.isNotEmpty ? currentUserProfile.email : 'No email';
+    final displayPassword = currentUserProfile.password.isNotEmpty
+        ? currentUserProfile.password
+        : 'Not available';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F9FB),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F9FB),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF003D66)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF003D66),
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Account Details',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF003D66),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildProfileField('Name', displayName),
+              const SizedBox(height: 12),
+              _buildProfileField('Email', displayEmail),
+              const SizedBox(height: 12),
+              _buildProfileField('Password', displayPassword),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileField(String label, String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F9FB),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF7B8E9E),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF003D66),
             ),
           ),
         ],
