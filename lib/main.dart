@@ -50,8 +50,11 @@ Future<UserCredential?> signInWithGoogle(BuildContext context) async {
       ),
     );
 
+    final googleSignIn = GoogleSignIn();
+    await googleSignIn.signOut();
+
     // Trigger the authentication flow
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
     // If user cancels the sign-in
     if (googleUser == null) {
@@ -3258,7 +3261,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  int _selectedCategory = 0;
+  final int _selectedCategory = 0;
   final List<String> _categories = ['All', 'Walking', 'Grooming', 'Sitting', 'Vet'];
 
   @override
@@ -3316,9 +3319,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Greeting
-                            const Text(
-                              'Good Morning, Aayush',
-                              style: TextStyle(
+                            Text(
+                              'Good Morning, $displayName',
+                              style: const TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -5596,9 +5599,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                           _buildSettingRow(Icons.edit, 'Edit Profile', onTap: () {
                             Navigator.of(context).pushNamed('/edit-profile');
                           }),
-                          _buildSettingRow(Icons.logout, 'Logout',
-                              onTap: () {
-                            Navigator.of(context).pushReplacementNamed('/login');
+                          _buildSettingRow(Icons.logout, 'Logout', onTap: () async {
+                            currentUserProfile = UserProfile(
+                              name: '',
+                              email: '',
+                              password: '',
+                            );
+                            await FirebaseAuth.instance.signOut();
+                            await GoogleSignIn().signOut();
+                            if (mounted) {
+                              Navigator.of(context).pushReplacementNamed('/login');
+                            }
                           }),
                         ],
                       ),
@@ -6036,6 +6047,13 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
     // Simulate a small delay for UI feedback
     await Future.delayed(const Duration(milliseconds: 500));
+
+    // Store user profile data
+    currentUserProfile = UserProfile(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
 
     if (mounted) {
       // Request location permission and get user's location
