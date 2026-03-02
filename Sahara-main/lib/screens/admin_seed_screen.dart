@@ -1,0 +1,453 @@
+import 'package:flutter/material.dart';
+import '../utils/firebase_seeder_india.dart';
+import '../theme/app_colors.dart';
+
+/// Admin screen for seeding Firebase data
+/// 
+/// This screen provides a UI to seed initial data to Firebase Firestore.
+/// Use this once to populate your database with sample caregivers and packages.
+/// 
+/// Access: Add a button in your app to navigate here, or use a debug menu
+class AdminSeedScreen extends StatefulWidget {
+  const AdminSeedScreen({super.key});
+
+  @override
+  State<AdminSeedScreen> createState() => _AdminSeedScreenState();
+}
+
+class _AdminSeedScreenState extends State<AdminSeedScreen> {
+  final FirebaseSeederIndia _seeder = FirebaseSeederIndia();
+  bool _isSeeding = false;
+  String _status = 'Ready to seed data';
+  final List<String> _logs = [];
+
+  Future<void> _seedAllData() async {
+    setState(() {
+      _isSeeding = true;
+      _status = 'Seeding data...';
+      _logs.clear();
+    });
+
+    try {
+      _addLog('🌱 Starting data seeding...');
+      await _seeder.seedAll();
+      _addLog('✅ Data seeding completed successfully!');
+      
+      setState(() {
+        _status = 'Seeding completed successfully!';
+        _isSeeding = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Data seeded successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      _addLog('❌ Error: $e');
+      setState(() {
+        _status = 'Seeding failed';
+        _isSeeding = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearAllData() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Data?'),
+        content: const Text(
+          'This will delete all seeded caregivers and packages. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isSeeding = true;
+      _status = 'Clearing data...';
+      _logs.clear();
+    });
+
+    try {
+      _addLog('🗑️  Clearing all data...');
+      await _seeder.clearAllData();
+      _addLog('✅ Data cleared successfully!');
+      
+      setState(() {
+        _status = 'Data cleared successfully!';
+        _isSeeding = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Data cleared successfully!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      _addLog('❌ Error: $e');
+      setState(() {
+        _status = 'Clearing failed';
+        _isSeeding = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearEntireDatabase() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red.shade700),
+            const SizedBox(width: 8),
+            const Text('⚠️ DANGER!'),
+          ],
+        ),
+        content: const Text(
+          'This will DELETE EVERYTHING in the database:\n\n'
+          '• ALL users (owners & caregivers)\n'
+          '• ALL pets\n'
+          '• ALL bookings\n'
+          '• ALL chats & messages\n'
+          '• ALL reviews\n'
+          '• ALL service packages\n\n'
+          'This action CANNOT be undone!\n\n'
+          'Are you absolutely sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('YES, DELETE EVERYTHING'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isSeeding = true;
+      _status = 'Clearing ENTIRE database...';
+      _logs.clear();
+    });
+
+    try {
+      _addLog('🚨 WARNING: Clearing ENTIRE database...');
+      await _seeder.clearEntireDatabase();
+      _addLog('✅ ENTIRE database cleared successfully!');
+      
+      setState(() {
+        _status = 'ENTIRE database cleared!';
+        _isSeeding = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ ENTIRE database cleared!'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      _addLog('❌ Error: $e');
+      setState(() {
+        _status = 'Clearing failed';
+        _isSeeding = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _checkDatabaseStatus() async {
+    setState(() {
+      _isSeeding = true;
+      _status = 'Checking database...';
+      _logs.clear();
+    });
+
+    try {
+      _addLog('📊 Checking database status...');
+      await _seeder.checkDatabaseStatus();
+      _addLog('✅ Status check completed!');
+      
+      setState(() {
+        _status = 'Status check completed!';
+        _isSeeding = false;
+      });
+    } catch (e) {
+      _addLog('❌ Error: $e');
+      setState(() {
+        _status = 'Status check failed';
+        _isSeeding = false;
+      });
+    }
+  }
+
+  void _addLog(String message) {
+    setState(() {
+      _logs.add('${DateTime.now().toString().substring(11, 19)} - $message');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Firebase Data Seeder'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Status Card
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _isSeeding
+                                ? Icons.hourglass_empty
+                                : Icons.check_circle_outline,
+                            color: _isSeeding ? Colors.orange : Colors.green,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _status,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_isSeeding) ...[
+                        const SizedBox(height: 16),
+                        const LinearProgressIndicator(),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              ElevatedButton.icon(
+                onPressed: _isSeeding ? null : _seedAllData,
+                icon: const Icon(Icons.cloud_upload),
+                label: const Text('Seed All Data'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              OutlinedButton.icon(
+                onPressed: _isSeeding ? null : _checkDatabaseStatus,
+                icon: const Icon(Icons.analytics_outlined),
+                label: const Text('Check Database Status'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              OutlinedButton.icon(
+                onPressed: _isSeeding ? null : _clearAllData,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Clear Seeded Data'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.orange,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              OutlinedButton.icon(
+                onPressed: _isSeeding ? null : _clearEntireDatabase,
+                icon: const Icon(Icons.delete_forever),
+                label: const Text('⚠️ CLEAR ENTIRE DATABASE'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: BorderSide(color: Colors.red.shade700, width: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Info Card
+              Card(
+                color: Colors.blue.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue.shade700),
+                          const SizedBox(width: 8),
+                          Text(
+                            'What will be seeded?',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '• 16 Elite caregiver profiles across 7 major Indian cities\n'
+                        '• 21 Service packages (Dog Walking, Pet Sitting, Grooming, Training, Vet Visit)\n'
+                        '• Market-researched pricing (₹150-2,500)\n'
+                        '• Professional credentials & certifications',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Logs Section
+              const Text(
+                'Logs:',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: _logs.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No logs yet',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _logs.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                _logs[index],
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
