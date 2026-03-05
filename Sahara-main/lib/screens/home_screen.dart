@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../providers/auth_provider.dart';
 import '../providers/favorites_provider.dart';
+import '../providers/location_provider.dart';
 import '../services/firestore_service.dart';
 import '../models/user_model.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -519,6 +520,169 @@ class _HomeTabState extends State<HomeTab> {
     super.initState();
     _loadFavorites();
     _searchController.addListener(_onSearchChanged);
+    
+    // Automatically request location permission on app load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationAutomatically();
+    });
+  }
+  
+  /// Automatically request location permission when user lands on home
+  Future<void> _requestLocationAutomatically() async {
+    try {
+      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+      
+      // Only request if not already granted
+      if (!locationProvider.permissionGranted) {
+        debugPrint('Auto-requesting location permission...');
+        await locationProvider.requestLocationPermission();
+      }
+    } catch (e) {
+      debugPrint('Error auto-requesting location: $e');
+    }
+  }
+
+  /// Build location permission bottom sheet
+  Widget _buildLocationPermissionSheet() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+              margin: const EdgeInsets.only(bottom: 20),
+            ),
+            // Icon
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.location_on_rounded,
+                size: 36,
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Title
+            Text(
+              'Allow Location Access',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+                fontFamily: 'Montserrat',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            // Description
+            Text(
+              'We need your location to show nearby caregivers and provide personalized service recommendations.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w400,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            // Allow button
+            Consumer<LocationProvider>(
+              builder: (context, locationProvider, _) {
+                return SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: locationProvider.isLoading
+                        ? null
+                        : () async {
+                            final success = await locationProvider.requestLocationPermission();
+                            if (mounted && success) {
+                              Navigator.pop(context);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      disabledBackgroundColor: Colors.grey[300],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: locationProvider.isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white.withValues(alpha: 0.8),
+                              ),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Allow Location Access',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontFamily: 'Montserrat',
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            // Dismiss button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey[300]!),
+                  ),
+                ),
+                child: const Text(
+                  'Not Now',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    fontFamily: 'Montserrat',
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Load user's favorites
@@ -599,7 +763,13 @@ class _HomeTabState extends State<HomeTab> {
           color: AppColors.secondary,
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(child: _buildHeader(userName)),
+              // Scrollable header with greeting and location
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                  child: _buildStickyHeader(userName),
+                ),
+              ),
               SliverToBoxAdapter(child: _buildSearchBar()),
               SliverToBoxAdapter(child: _buildServices()),
               SliverToBoxAdapter(child: _buildFeaturedSection()),
@@ -614,86 +784,145 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  // ============================================================================
-  // UI BUILDER METHODS
-  // ============================================================================
-
-  /// Build header with greeting
-  Widget _buildHeader(String userName) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Hello, $userName!',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
-                          fontFamily: 'Montserrat',
-                          height: 1.2,
+  /// Build sticky header with greeting and location
+  Widget _buildStickyHeader(String userName) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Greeting row with messages
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Greeting text
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Hello, $userName!',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.5,
+                            fontFamily: 'Montserrat',
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.waving_hand_rounded,
-                      size: 22,
-                      color: Color(0xFFFFB74D),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.waving_hand_rounded,
+                        size: 22,
+                        color: Color(0xFFFFB74D),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Location Display
+                  Consumer<LocationProvider>(
+                    builder: (context, locationProvider, _) {
+                      return AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Container(
+                          key: ValueKey(locationProvider.permissionGranted),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.accent.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                size: 16,
+                                color: AppColors.accent,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  locationProvider.isLoading
+                                      ? 'Getting location...'
+                                      : locationProvider.permissionGranted
+                                          ? locationProvider.getLocationString()
+                                          : 'Requesting location...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.accent,
+                                    fontFamily: 'Montserrat',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (locationProvider.isLoading)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 6),
+                                  child: SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.accent.withValues(alpha: 0.6),
+                                      ),
+                                      strokeWidth: 1.5,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              // Messages button - Instagram style
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MessagesComingSoonScreen(),
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(50),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    child: Icon(
-                      Icons.messenger_outline_rounded,
-                      size: 24,
-                      color: AppColors.textPrimary,
+            ),
+            const SizedBox(width: 8),
+            // Messages button
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MessagesComingSoonScreen(),
                     ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(50),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(
+                    Icons.messenger_outline_rounded,
+                    size: 24,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Find perfect care for your pet',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontFamily: 'Montserrat',
-              fontWeight: FontWeight.w400,
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
+
+  // ============================================================================
+  // UI BUILDER METHODS
+  // ============================================================================
 
   /// Build search bar with filter button
   Widget _buildSearchBar() {
@@ -1758,6 +1987,10 @@ class _HomeTabState extends State<HomeTab> {
 // DATA MODEL
 // ============================================================================
 
+// ============================================================================
+// HELPER MODELS
+// ============================================================================
+
 /// Service data model for service cards
 class ServiceData {
   final String title;
@@ -1767,6 +2000,7 @@ class ServiceData {
 
   ServiceData(this.title, this.icon, this.color, {this.imageUrl});
 }
+
 
 
 
