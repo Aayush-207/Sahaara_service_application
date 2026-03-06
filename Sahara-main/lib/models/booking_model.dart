@@ -13,6 +13,7 @@ class BookingModel {
   final double price;
   final String? notes;
   final DateTime createdAt;
+  final String? cancellationReason;
 
   BookingModel({
     required this.id,
@@ -27,6 +28,7 @@ class BookingModel {
     required this.price,
     this.notes,
     required this.createdAt,
+    this.cancellationReason,
   });
 
   factory BookingModel.fromMap(Map<String, dynamic> map, String id) {
@@ -51,6 +53,7 @@ class BookingModel {
               ? (map['createdAt'] as Timestamp).toDate()
               : DateTime.parse(map['createdAt']))
           : DateTime.now(),
+      cancellationReason: map['cancellationReason'],
     );
   }
 
@@ -67,6 +70,7 @@ class BookingModel {
       'price': price,
       'notes': notes,
       'createdAt': createdAt.toIso8601String(),
+      'cancellationReason': cancellationReason,
     };
   }
 }

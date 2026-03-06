@@ -201,6 +201,14 @@ class FirestoreService {
     });
   }
 
+  // Cancel booking with reason
+  Future<void> cancelBookingWithReason(String bookingId, String reason) async {
+    await _firestore.collection('bookings').doc(bookingId).update({
+      'status': 'cancelled',
+      'cancellationReason': reason,
+    });
+  }
+
   // Update user profile
   Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
     await _firestore.collection('users').doc(uid).update(data);

@@ -151,6 +151,25 @@ class BookingProvider with ChangeNotifier {
     return await updateBookingStatus(bookingId, 'cancelled');
   }
 
+  /// Cancel booking with reason
+  Future<bool> cancelBookingWithReason(String bookingId, String reason) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _firestoreService.cancelBookingWithReason(bookingId, reason);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Failed to cancel booking: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Confirm booking
   Future<bool> confirmBooking(String bookingId) async {
     return await updateBookingStatus(bookingId, 'confirmed');
