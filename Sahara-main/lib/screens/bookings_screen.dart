@@ -251,6 +251,12 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
           }
         }).toList();
 
+        // Add default completed booking to completed section
+        if (status == 'completed') {
+          final defaultBooking = _createDefaultCompletedBooking();
+          filteredBookings.add(defaultBooking);
+        }
+
         if (filteredBookings.isEmpty) {
           return _buildEmptyState(status);
         }
@@ -489,6 +495,27 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
           ),
         ],
       ),
+    );
+  }
+
+  // ============================================================================
+  // DEFAULT BOOKING HELPER
+  // ============================================================================
+
+  /// Creates a default completed booking for demonstration
+  BookingModel _createDefaultCompletedBooking() {
+    return BookingModel(
+      id: 'default_booking_001',
+      ownerId: '', // Will be populated by userId context
+      caregiverId: 'caregiver_priya_sharma', // Use first caregiver from seed data
+      serviceType: 'Dog Walking',
+      packageName: 'Premium Trail Walk',
+      scheduledDate: DateTime.now().subtract(const Duration(days: 7)),
+      status: 'completed',
+      price: 500.0,
+      duration: 60,
+      notes: 'Great walk! Max enjoyed the trail.',
+      cancellationReason: null,
     );
   }
 }

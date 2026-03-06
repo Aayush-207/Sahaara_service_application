@@ -10,6 +10,7 @@ import 'settings_screen.dart';
 import 'help_support_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'admin_seed_screen.dart';
+import 'favourites_screen.dart';
 import '../theme/app_colors.dart';
 
 /// Profile Screen - Industry Standard Implementation
@@ -257,6 +258,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           const SizedBox(height: 8), // 8pt grid
+          
+          _buildMenuItem(
+            context: context,
+            soundService: soundService,
+            icon: Icons.favorite_rounded,
+            title: 'Favourite Caregivers',
+            subtitle: 'View your favourite caregivers',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FavouritesScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
           
           _buildMenuItem(
             context: context,

@@ -74,18 +74,34 @@ class FirestoreService {
   // Search caregivers by service
   Future<List<UserModel>> searchCaregiversByService(String service) async {
     try {
+      // Normalize service name for matching
+      final normalizedService = _normalizeServiceName(service);
+      
       final snapshot = await _firestore
           .collection('users')
           .where('userType', isEqualTo: 'caregiver')
-          .where('services', arrayContains: service)
           .get();
 
       return snapshot.docs
           .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+          .where((user) {
+            if (user.services == null) return false;
+            // Check if caregiver has the service (accounting for variations like "Training" vs "Dog Training")
+            return user.services!.any((caregiverService) => 
+              _normalizeServiceName(caregiverService).contains(normalizedService) ||
+              normalizedService.contains(_normalizeServiceName(caregiverService))
+            );
+          })
           .toList();
     } catch (e) {
+      debugPrint('Error searching caregivers by service: $e');
       return [];
     }
+  }
+
+  /// Normalize service names to handle variations (e.g., "Training" -> "training")
+  String _normalizeServiceName(String service) {
+    return service.toLowerCase().trim();
   }
 
   // Search caregivers by location
