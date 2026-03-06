@@ -508,13 +508,15 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
       id: 'default_booking_001',
       ownerId: '', // Will be populated by userId context
       caregiverId: 'caregiver_priya_sharma', // Use first caregiver from seed data
+      petId: 'default_pet_max', // Sample pet ID
       serviceType: 'Dog Walking',
       packageName: 'Premium Trail Walk',
       scheduledDate: DateTime.now().subtract(const Duration(days: 7)),
       status: 'completed',
       price: 500.0,
-      duration: 60,
+      duration: '60 minutes',
       notes: 'Great walk! Max enjoyed the trail.',
+      createdAt: DateTime.now().subtract(const Duration(days: 8)),
       cancellationReason: null,
     );
   }

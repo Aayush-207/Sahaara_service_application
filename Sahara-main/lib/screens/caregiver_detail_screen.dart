@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../models/review_model.dart';
 import '../models/service_package_model.dart';
 import '../services/firestore_service.dart';
 import '../services/sound_service.dart';
 import '../services/package_service.dart';
+import '../providers/auth_provider.dart';
+import '../providers/favorites_provider.dart';
 import '../widgets/custom_button.dart';
 import '../theme/app_colors.dart';
 import 'messages_coming_soon_screen.dart';
@@ -940,10 +943,49 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> {
   // UI BUILDERS - ACTION BUTTONS
   // ============================================================================
 
-  /// Builds the action buttons (message, book now)
+  /// Builds the action buttons (favorite, message, book now)
   Widget _buildActionButtons() {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+    final userId = authProvider.currentUser?.uid;
+    final isFavorite = favoritesProvider.isFavorite(widget.caregiver.uid);
+
     return Row(
       children: [
+        // Favorite button
+        if (userId != null)
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isFavorite ? AppColors.error : AppColors.textTertiary,
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              onPressed: () async {
+                _soundService.playTap();
+                await favoritesProvider.toggleFavorite(userId, widget.caregiver.uid);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isFavorite
+                            ? 'Removed from favorites'
+                            : 'Added to favorites',
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              icon: Icon(
+                isFavorite ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                color: isFavorite ? AppColors.error : AppColors.textSecondary,
+              ),
+            ),
+          ),
+        const SizedBox(width: 10),
         Expanded(
           child: CustomButton(
             text: 'Message',
@@ -997,6 +1039,7 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> {
       case 'grooming':
         return Icons.content_cut;
       case 'training':
+      case 'dog training':
         return Icons.school;
       case 'vet visit':
       case 'medication administration':

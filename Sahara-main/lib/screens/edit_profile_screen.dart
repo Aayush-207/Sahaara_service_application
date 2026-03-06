@@ -109,24 +109,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           throw Exception('No user logged in');
         }
 
-        // Upload image if selected
+        // Upload image if selected (optional - continues without image if upload fails)
         String? photoUrl = _uploadedImageUrl ?? currentUser.photoUrl;
         if (_selectedImagePath != null && _uploadedImageUrl == null) {
           setState(() {
             _isUploadingImage = true;
           });
           
-          final file = File(_selectedImagePath!);
-          photoUrl = await _storageService.uploadProfilePicture(file, currentUser.uid);
+          try {
+            final file = File(_selectedImagePath!);
+            final uploadedUrl = await _storageService.uploadProfilePicture(file, currentUser.uid);
+            
+            if (uploadedUrl != null) {
+              photoUrl = uploadedUrl;
+              _uploadedImageUrl = uploadedUrl;
+            } else {
+              // Image upload failed, but continue with profile update
+              debugPrint('⚠️ Image upload failed, continuing without image update');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Image upload failed, but profile will be updated'),
+                    backgroundColor: Colors.orange,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+          } catch (imageError) {
+            debugPrint('❌ Image upload error: $imageError');
+            // Continue without image update
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Could not upload image. Profile will update without it.'),
+                  backgroundColor: Colors.orange,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
           
           setState(() {
             _isUploadingImage = false;
-            _uploadedImageUrl = photoUrl;
           });
-          
-          if (photoUrl == null) {
-            throw Exception('Failed to upload profile picture');
-          }
         }
 
         // Prepare update data
@@ -145,7 +171,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         await authProvider.updateUserProfile(updateData);
 
         debugPrint('✅ Profile updated in Firestore');
-        debugPrint('🔄 Refreshing user data...');
 
         if (!mounted) return;
 
