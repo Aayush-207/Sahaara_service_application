@@ -17,6 +17,7 @@ import 'service_selection_screen.dart';
 import 'package_selection_screen.dart';
 import 'my_pets_screen.dart';
 import 'messages_coming_soon_screen.dart';
+import 'notifications_screen.dart';
 import '../theme/app_colors.dart';
 
 /// Home Screen - Main app entry point after authentication
@@ -775,7 +776,6 @@ class _HomeTabState extends State<HomeTab> {
               SliverToBoxAdapter(child: _buildFeaturedSection()),
               SliverToBoxAdapter(child: _buildTopCaregivers()),
               SliverToBoxAdapter(child: _buildTipsSection()),
-              SliverToBoxAdapter(child: _buildTestimonials()),
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
@@ -891,7 +891,7 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
             const SizedBox(width: 8),
-            // Messages button
+            // Notifications button
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -899,7 +899,7 @@ class _HomeTabState extends State<HomeTab> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const MessagesComingSoonScreen(),
+                      builder: (_) => const NotificationsScreen(),
                     ),
                   );
                 },
@@ -907,7 +907,7 @@ class _HomeTabState extends State<HomeTab> {
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   child: Icon(
-                    Icons.messenger_outline_rounded,
+                    Icons.notifications_outlined,
                     size: 24,
                     color: AppColors.textPrimary,
                   ),
@@ -1171,27 +1171,32 @@ class _HomeTabState extends State<HomeTab> {
       ServiceData(
         'Dog Walking',
         Icons.directions_walk_rounded,
-        AppColors.primary,
+        'Take your pet for a walk',
+        '₹299',
       ),
       ServiceData(
         'Pet Sitting',
         Icons.home_rounded,
-        AppColors.primary,
+        'Pet care while you are away',
+        '₹499',
       ),
       ServiceData(
         'Grooming',
         Icons.content_cut_rounded,
-        AppColors.primary,
+        'Professional grooming service',
+        '₹599',
       ),
       ServiceData(
         'Training',
         Icons.school_rounded,
-        AppColors.primary,
+        'Train your pet effectively',
+        '₹799',
       ),
       ServiceData(
         'Vet Visit',
         Icons.local_hospital_rounded,
-        AppColors.primary,
+        'Visit to veterinarian',
+        '₹699',
       ),
     ];
 
@@ -1265,7 +1270,7 @@ class _HomeTabState extends State<HomeTab> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: service.color,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(11),
               ),
               child: Icon(service.icon, size: 22, color: Colors.white),
@@ -1659,7 +1664,7 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  /// Build pet care tips section
+  /// Build pet care tips section with 2-column vertical layout
   Widget _buildTipsSection() {
     final tips = [
       // Seasonal Tips
@@ -1702,303 +1707,101 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
           const SizedBox(height: 14),
-          ...tips.map((tip) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: InkWell(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${tip['title']} - Learn more about pet care'),
-                    backgroundColor: AppColors.primary,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+          // 2-column grid layout
+          GridView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.85,
+            ),
+            itemCount: tips.length,
+            itemBuilder: (context, index) {
+              final tip = tips[index];
+              return InkWell(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${tip['title']} - Learn more about pet care'),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      duration: const Duration(seconds: 2),
                     ),
-                    duration: const Duration(seconds: 2),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[200]!, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.textPrimary.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                );
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        borderRadius: BorderRadius.circular(11),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Icon(
+                          tip['icon'] as IconData,
+                          size: 22,
+                          color: Colors.white,
+                        ),
                       ),
-                      child: Icon(
-                        tip['icon'] as IconData,
-                        size: 22,
-                        color: Colors.white,
+                      const SizedBox(height: 12),
+                      Text(
+                        tip['title'] as String,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          fontFamily: 'Montserrat',
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tip['title'] as String,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                              fontFamily: 'Montserrat',
-                            ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: Text(
+                          tip['description'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontFamily: 'Montserrat',
+                            height: 1.3,
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            tip['description'] as String,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                              fontFamily: 'Montserrat',
-                            ),
-                          ),
-                        ],
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 16,
-                      color: Colors.grey[400],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
-          )),
-        ],
-      ),
-    );
-  }
-
-  /// Build testimonials section
-  Widget _buildTestimonials() {
-    final testimonials = [
-      {
-        'name': 'Priya Malhotra',
-        'location': 'Koregaon Park, Pune',
-        'rating': '5.0',
-        'text': 'Absolutely wonderful! My Golden Retriever Bruno loves his daily walks with Rahul. Very punctual and sends photo updates every time.',
-        'photoUrl': 'https://xsgames.co/randomusers/assets/avatars/female/20.jpg',
-      },
-      {
-        'name': 'Arjun Reddy',
-        'location': 'Baner, Pune',
-        'rating': '5.0',
-        'text': 'Best dog sitting service! Anjali took amazing care of my Labrador during my vacation. She even sent videos of playtime. Highly recommended!',
-        'photoUrl': 'https://xsgames.co/randomusers/assets/avatars/male/78.jpg',
-      },
-      {
-        'name': 'Sneha Kapoor',
-        'location': 'Viman Nagar, Pune',
-        'rating': '4.9',
-        'text': 'My Pug Momo was anxious at first, but the caregiver was so patient and gentle. Now Momo gets excited whenever she sees her!',
-        'photoUrl': 'https://xsgames.co/randomusers/assets/avatars/female/40.jpg',
-      },
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'What Pet Owners Say',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-              fontFamily: 'Montserrat',
-              letterSpacing: -0.3,
-            ),
+              );
+            },
           ),
-          const SizedBox(height: 14),
-          ...testimonials.map((testimonial) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: InkWell(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Review by ${testimonial['name']}'),
-                    backgroundColor: AppColors.primary,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary,
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(11),
-                            child: CachedNetworkImage(
-                              imageUrl: testimonial['photoUrl'] as String,
-                              fit: BoxFit.cover,
-                              width: 44,
-                              height: 44,
-                              placeholder: (context, url) => Container(
-                                color: AppColors.secondary,
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) {
-                                debugPrint('Error loading testimonial image: $error');
-                                return const Icon(
-                                  Icons.person_rounded,
-                                  size: 22,
-                                  color: Colors.white,
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                testimonial['name'] as String,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                  fontFamily: 'Montserrat',
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.location_on_rounded,
-                                    size: 12,
-                                    color: Colors.grey[500],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      testimonial['location'] as String,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[500],
-                                        fontFamily: 'Montserrat',
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 14,
-                              color: AppColors.secondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              testimonial['rating'] as String,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                                fontFamily: 'Montserrat',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      testimonial['text'] as String,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        fontFamily: 'Montserrat',
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )),
         ],
       ),
     );
   }
-}
-
-// ============================================================================
-// DATA MODEL
-// ============================================================================
-
-// ============================================================================
-// HELPER MODELS
-// ============================================================================
-
-/// Service data model for service cards
-class ServiceData {
-  final String title;
-  final IconData icon;
-  final Color color;
-  final String? imageUrl;
-
-  ServiceData(this.title, this.icon, this.color, {this.imageUrl});
 }
 
 
