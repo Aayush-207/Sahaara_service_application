@@ -10,11 +10,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 class ReportDialog extends StatefulWidget {
   final String caregiverId;
   final String caregiverName;
+  final VoidCallback? onReported;
 
   const ReportDialog({
     super.key,
     required this.caregiverId,
     required this.caregiverName,
+    this.onReported,
   });
 
   @override
@@ -76,6 +78,9 @@ class _ReportDialogState extends State<ReportDialog> {
           ),
         );
         Navigator.pop(context);
+        
+        // Call the onReported callback if provided
+        widget.onReported?.call();
       }
     } catch (e) {
       if (mounted) {

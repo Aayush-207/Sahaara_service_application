@@ -5,7 +5,6 @@ import '../models/user_model.dart';
 import '../theme/app_colors.dart';
 import '../services/sound_service.dart';
 import '../screens/chat_screen.dart';
-import '../widgets/report_dialog.dart';
 
 /// Booking Card Widget
 /// 
@@ -371,84 +370,37 @@ class BookingCard extends StatelessWidget {
             ],
             
             // Action Buttons
-            if (caregiver != null) ...[
+            if (caregiver != null && (booking.status == 'confirmed' || booking.status == 'pending')) ...[
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  // Chat Button (for confirmed/pending bookings)
-                  if (booking.status == 'confirmed' || booking.status == 'pending')
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          soundService.playTap();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                chatRoomId: '${booking.ownerId}_${booking.caregiverId}',
-                                caregiverId: booking.caregiverId,
-                                caregiverName: caregiver!.name,
-                                caregiverPhotoUrl: caregiver!.photoUrl ?? '',
-                                caregiverEmail: caregiver!.email,
-                                caregiverRating: caregiver!.rating,
-                              ),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        icon: const Icon(Icons.chat_rounded, size: 16),
-                        label: const Text(
-                          'Chat',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Montserrat',
-                          ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  onPressed: () {
+                    soundService.playTap();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          chatRoomId: '${booking.ownerId}_${booking.caregiverId}',
+                          caregiverId: booking.caregiverId,
+                          caregiverName: caregiver!.name,
+                          caregiverPhotoUrl: caregiver!.photoUrl ?? '',
+                          caregiverEmail: caregiver!.email,
+                          caregiverRating: caregiver!.rating,
                         ),
                       ),
-                    ),
-                  if (booking.status == 'confirmed' || booking.status == 'pending')
-                    const SizedBox(width: 10),
-                  // Report Button
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        soundService.playTap();
-                        showDialog(
-                          context: context,
-                          builder: (context) => ReportDialog(
-                            caregiverId: caregiver!.uid,
-                            caregiverName: caregiver!.name,
-                          ),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.error,
-                        side: const BorderSide(color: AppColors.error, width: 1),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      icon: const Icon(Icons.flag_rounded, size: 16),
-                      label: const Text(
-                        'Report',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.chat_rounded),
+                  color: AppColors.primary,
+                  tooltip: 'Chat with ${caregiver!.name}',
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                ],
+                ),
               ),
             ],
             

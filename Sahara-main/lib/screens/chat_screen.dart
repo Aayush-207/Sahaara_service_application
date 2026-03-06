@@ -40,11 +40,13 @@ class _ChatScreenState extends State<ChatScreen> {
   final _soundService = SoundService();
   late String _currentUserId;
   bool _isSending = false;
+  bool _hasReported = false;
 
   @override
   void initState() {
     super.initState();
     _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    _checkIfAlreadyReported();
   }
 
   @override
@@ -52,6 +54,22 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Check if current user has already reported this caregiver
+  Future<void> _checkIfAlreadyReported() async {
+    try {
+      final reports = await _firestoreService.getCaregiverReports(widget.caregiverId);
+      
+      // Check if current user has already reported this caregiver
+      final hasReported = reports.any((report) => report['reporterId'] == _currentUserId);
+      
+      if (mounted) {
+        setState(() => _hasReported = hasReported);
+      }
+    } catch (e) {
+      debugPrint('Error checking report status: $e');
+    }
   }
 
   /// Make a phone call to the caregiver
@@ -96,6 +114,9 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (context) => ReportDialog(
         caregiverId: widget.caregiverId,
         caregiverName: widget.caregiverName,
+        onReported: () {
+          setState(() => _hasReported = true);
+        },
       ),
     );
   }
@@ -483,11 +504,42 @@ class _ChatScreenState extends State<ChatScreen> {
           tooltip: 'Call Caregiver',
           onPressed: _makeCall,
         ),
-        IconButton(
-          icon: const Icon(Icons.flag_rounded, color: AppColors.error),
-          tooltip: 'Report Caregiver',
-          onPressed: _reportCaregiver,
-        ),
+        if (_hasReported)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle_rounded, 
+                    color: AppColors.error, 
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Reported',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.error,
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          IconButton(
+            icon: const Icon(Icons.flag_rounded, color: AppColors.error),
+            tooltip: 'Report Caregiver',
+            onPressed: _reportCaregiver,
+          ),
         const SizedBox(width: 8),
       ],
       bottom: PreferredSize(
