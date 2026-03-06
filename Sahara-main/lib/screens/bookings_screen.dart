@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/booking_provider.dart';
 import '../services/firestore_service.dart';
 import '../services/sound_service.dart';
 import '../models/booking_model.dart';
-import 'package:intl/intl.dart';
+import '../models/user_model.dart';
 import '../theme/app_colors.dart';
+import '../widgets/booking_card.dart';
+import '../widgets/cancel_booking_dialogs.dart';
 
 /// Bookings Screen
 /// 
@@ -18,7 +21,8 @@ import '../theme/app_colors.dart';
 /// - Tab-based navigation for different booking statuses
 /// - Real-time booking data with StreamBuilder
 /// - Pull-to-refresh functionality
-/// - Booking cards with all details
+/// - Booking cards with caregiver information
+/// - Cancellation flow with dialogs
 /// - Empty states for each tab
 /// - Error handling with retry
 /// 
@@ -235,7 +239,7 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _buildBookingCard(filteredBookings[index]),
+                child: _buildBookingCardWithData(filteredBookings[index]),
               );
             },
           ),
@@ -245,225 +249,109 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   }
 
   // ============================================================================
-  // UI BUILDERS - BOOKING CARD
+  // UI BUILDERS - BOOKING CARD WITH CAREGIVER DATA
   // ============================================================================
 
-  /// Builds a single booking card
-  Widget _buildBookingCard(BookingModel booking) {
-    final dateFormat = DateFormat('MMM dd, yyyy');
-    final timeFormat = DateFormat('hh:mm a');
+  /// Builds a booking card with fetched caregiver data
+  Widget _buildBookingCardWithData(BookingModel booking) {
+    return FutureBuilder<UserModel?>(
+      future: _firestoreService.getUserById(booking.caregiverId),
+      builder: (context, snapshot) {
+        final caregiver = snapshot.data;
 
-    Color statusColor;
-    IconData statusIcon;
-    
-    switch (booking.status) {
-      case 'confirmed':
-        statusColor = AppColors.success;
-        statusIcon = Icons.check_circle_rounded;
-        break;
-      case 'completed':
-        statusColor = AppColors.info;
-        statusIcon = Icons.done_all_rounded;
-        break;
-      case 'cancelled':
-        statusColor = AppColors.error;
-        statusIcon = Icons.cancel_rounded;
-        break;
-      default:
-        statusColor = AppColors.warning;
-        statusIcon = Icons.schedule_rounded;
-    }
-
-    return InkWell(
-      onTap: () {
-        _soundService.playTap();
-        // Navigate to booking details
+        return BookingCard(
+          booking: booking,
+          caregiver: caregiver,
+          onCancel: (booking.status == 'pending' || booking.status == 'confirmed')
+              ? () => _handleCancelBooking(booking)
+              : null,
+          onTap: () {
+            _soundService.playTap();
+            // Navigate to booking details if needed
+          },
+        );
       },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with status
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary, // Solid color, no gradient
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.pets_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        booking.serviceType,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        booking.packageName,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, size: 14, color: statusColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        booking.status.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: statusColor,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            
-            // Date and Time
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoRow(
-                    Icons.calendar_today_rounded,
-                    'Date',
-                    dateFormat.format(booking.scheduledDate),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildInfoRow(
-                    Icons.access_time_rounded,
-                    'Time',
-                    timeFormat.format(booking.scheduledDate),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            
-            // Price
-            _buildInfoRow(
-              Icons.payments_rounded,
-              'Price',
-              '₹${booking.price.toStringAsFixed(0)}',
-            ),
-            
-            // Notes if available
-            if (booking.notes != null && booking.notes!.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.note_rounded,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        booking.notes!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 
-  /// Builds an info row with icon, label, and value
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: AppColors.textTertiary),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textTertiary,
-                fontFamily: 'Montserrat',
-              ),
-            ),
-            const SizedBox(height: 1),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-                fontFamily: 'Montserrat',
-              ),
-            ),
-          ],
-        ),
-      ],
+  // ============================================================================
+  // CANCELLATION FLOW
+  // ============================================================================
+
+  /// Handles the complete cancellation flow
+  Future<void> _handleCancelBooking(BookingModel booking) async {
+    // Show confirmation dialog
+    final confirmed = await CancelBookingDialogs.showConfirmationDialog(
+      context,
+      bookingId: booking.id,
     );
+
+    if (confirmed != true || !mounted) return;
+
+    // Show reason selection dialog
+    final reason = await CancelBookingDialogs.showReasonSelectionDialog(context);
+
+    if (reason == null || !mounted) return;
+
+    // Perform cancellation
+    _performCancellation(booking.id, reason);
+  }
+
+  /// Performs the actual cancellation
+  Future<void> _performCancellation(String bookingId, String reason) async {
+    try {
+      final bookingProvider = Provider.of<BookingProvider>(context, listen: false);
+      
+      // Show loading
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            color: AppColors.primary,
+            strokeWidth: 2,
+          ),
+        ),
+      );
+
+      // Perform cancellation
+      final success = await bookingProvider.cancelBookingWithReason(bookingId, reason);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (success) {
+        _soundService.playTap();
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking cancelled successfully'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to cancel booking'),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   // ============================================================================
@@ -473,19 +361,23 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   /// Builds the empty state for a specific status
   Widget _buildEmptyState(String status) {
     String message;
+    String submessage;
     IconData icon;
     
     switch (status) {
       case 'upcoming':
         message = 'No upcoming bookings';
+        submessage = 'Book a caregiver to get started';
         icon = Icons.event_busy_rounded;
         break;
       case 'completed':
         message = 'No completed bookings yet';
+        submessage = 'Your completed bookings will appear here';
         icon = Icons.done_all_rounded;
         break;
       default:
         message = 'No cancelled bookings';
+        submessage = 'Your cancelled bookings will appear here';
         icon = Icons.cancel_rounded;
     }
 
@@ -516,9 +408,9 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Book a service to get started',
-            style: TextStyle(
+          Text(
+            submessage,
+            style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
               fontFamily: 'Montserrat',
@@ -574,3 +466,4 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
     );
   }
 }
+

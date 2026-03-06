@@ -91,11 +91,11 @@ class BookingCard extends StatelessWidget {
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: caregiver!.profileImage != null && caregiver!.profileImage!.isNotEmpty
+                    child: caregiver!.photoUrl != null && caregiver!.photoUrl!.isNotEmpty
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: Image.network(
-                              caregiver!.profileImage!,
+                              caregiver!.photoUrl!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return const Icon(
@@ -133,7 +133,7 @@ class BookingCard extends StatelessWidget {
                             const Icon(Icons.star_rounded, size: 12, color: AppColors.warning),
                             const SizedBox(width: 4),
                             Text(
-                              '${caregiver!.rating?.toStringAsFixed(1) ?? "N/A"} (${caregiver!.reviewCount ?? 0} reviews)',
+                              '${caregiver!.rating?.toStringAsFixed(1) ?? "N/A"} (${caregiver!.completedBookings ?? 0} bookings)',
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,
