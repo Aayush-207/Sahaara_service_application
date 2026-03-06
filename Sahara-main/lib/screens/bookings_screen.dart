@@ -80,6 +80,33 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
     final authProvider = Provider.of<AuthProvider>(context);
     final userId = authProvider.currentUser?.uid ?? '';
 
+    // If no user ID, show login prompt
+    if (userId.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.login_rounded, size: 52, color: AppColors.textTertiary),
+                const SizedBox(height: 16),
+                const Text(
+                  'Please login to view bookings',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
@@ -230,17 +257,17 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
 
         return RefreshIndicator(
           onRefresh: () async {
-            setState(() {});
+            // Refresh the stream by waiting briefly
+            await Future.delayed(const Duration(milliseconds: 300));
           },
           color: AppColors.primary,
-          child: ListView.builder(
+          child: ListView.separated(
             padding: const EdgeInsets.all(20),
             itemCount: filteredBookings.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _buildBookingCardWithData(filteredBookings[index]),
-              );
+              final booking = filteredBookings[index];
+              return _buildSingleBookingCard(booking);
             },
           ),
         );
@@ -248,26 +275,25 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
     );
   }
 
+
+
   // ============================================================================
-  // UI BUILDERS - BOOKING CARD WITH CAREGIVER DATA
+  // UI BUILDERS - BOOKING CARD
   // ============================================================================
 
-  /// Builds a booking card with fetched caregiver data
-  Widget _buildBookingCardWithData(BookingModel booking) {
+  /// Builds a single booking card with caregiver data loading
+  Widget _buildSingleBookingCard(BookingModel booking) {
     return FutureBuilder<UserModel?>(
       future: _firestoreService.getUserById(booking.caregiverId),
       builder: (context, snapshot) {
-        final caregiver = snapshot.data;
-
         return BookingCard(
           booking: booking,
-          caregiver: caregiver,
+          caregiver: snapshot.data,
           onCancel: (booking.status == 'pending' || booking.status == 'confirmed')
               ? () => _handleCancelBooking(booking)
               : null,
           onTap: () {
             _soundService.playTap();
-            // Navigate to booking details if needed
           },
         );
       },

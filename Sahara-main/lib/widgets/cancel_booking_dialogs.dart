@@ -120,19 +120,15 @@ class CancelBookingDialogs {
                   fontFamily: 'Montserrat',
                 ),
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Common Reasons List
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: cancellationReasons.length,
-                      itemBuilder: (context, index) {
-                        final reason = cancellationReasons[index];
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Common Reasons List
+                      ...cancellationReasons.map((reason) {
                         final isSelected = selectedReason == reason;
-
                         return GestureDetector(
                           onTap: () {
                             soundService.playTap();
@@ -190,96 +186,98 @@ class CancelBookingDialogs {
                             ),
                           ),
                         );
-                      },
-                    ),
-                    const SizedBox(height: 12),
+                      }).toList(),
+                      const SizedBox(height: 12),
 
-                    // Other option with text box
-                    GestureDetector(
-                      onTap: () {
-                        soundService.playTap();
-                        setState(() {
-                          selectedReason = selectedReason == 'other' ? null : 'other';
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: selectedReason == 'other' ? AppColors.primary.withValues(alpha: 0.1) : AppColors.background,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: selectedReason == 'other' ? AppColors.primary : AppColors.border,
-                            width: 1.5,
+                      // Other option with text box
+                      GestureDetector(
+                        onTap: () {
+                          soundService.playTap();
+                          setState(() {
+                            selectedReason = selectedReason == 'other' ? null : 'other';
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: selectedReason == 'other' ? AppColors.primary.withValues(alpha: 0.1) : AppColors.background,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: selectedReason == 'other' ? AppColors.primary : AppColors.border,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: selectedReason == 'other' ? AppColors.primary : AppColors.textTertiary,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: selectedReason == 'other'
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 12,
+                                        color: AppColors.primary,
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Other',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: selectedReason == 'other' ? FontWeight.w600 : FontWeight.w500,
+                                    color: AppColors.textPrimary,
+                                    fontFamily: 'Montserrat',
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: selectedReason == 'other' ? AppColors.primary : AppColors.textTertiary,
-                                  width: 2,
-                                ),
-                              ),
-                              child: selectedReason == 'other'
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 12,
-                                      color: AppColors.primary,
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Other',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: selectedReason == 'other' ? FontWeight.w600 : FontWeight.w500,
-                                  color: AppColors.textPrimary,
-                                  fontFamily: 'Montserrat',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
 
-                    // Text input for "Other" reason
-                    if (selectedReason == 'other') ...[
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: textController,
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          hintText: 'Please tell us why...',
-                          hintStyle: const TextStyle(
+                      // Text input for "Other" reason
+                      if (selectedReason == 'other') ...[
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: textController,
+                          maxLines: 3,
+                          maxLength: 200,
+                          decoration: InputDecoration(
+                            hintText: 'Please tell us why...',
+                            hintStyle: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textTertiary,
+                              fontFamily: 'Montserrat',
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: AppColors.border),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                            counterText: '',
+                          ),
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textPrimary,
                             fontFamily: 'Montserrat',
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: AppColors.border),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.all(12),
                         ),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textPrimary,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               actions: [

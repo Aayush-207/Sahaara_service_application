@@ -369,7 +369,7 @@ class BookingCard extends StatelessWidget {
             ],
             
             // Cancel Button (for upcoming bookings)
-            if ((booking.status == 'pending' || booking.status == 'confirmed') && onCancel != null) ...[
+            if (onCancel != null) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -413,20 +413,20 @@ class BookingCard extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: AppColors.textTertiary),
         const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textTertiary,
-                fontFamily: 'Montserrat',
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textTertiary,
+                  fontFamily: 'Montserrat',
+                ),
               ),
-            ),
-            const SizedBox(height: 1),
-            Expanded(
-              child: Text(
+              const SizedBox(height: 1),
+              Text(
                 value,
                 style: const TextStyle(
                   fontSize: 12,
@@ -437,8 +437,8 @@ class BookingCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

@@ -11,6 +11,7 @@ import '../providers/pet_provider.dart';
 import '../services/firestore_service.dart';
 import '../services/sound_service.dart';
 import 'home_screen.dart';
+import 'bookings_screen.dart';
 
 /// Booking Confirmation Screen
 /// 
