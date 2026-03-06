@@ -283,5 +283,159 @@ class FirestoreService {
   Future<void> updatePaymentStatus(String paymentId, String status) async {
     // No-op
   }
+
+  // ============================================================================
+  // CHAT METHODS
+  // ============================================================================
+
+  /// Get or create a chat room between owner and caregiver
+  Future<String?> getOrCreateChatRoom({
+    required String ownerId,
+    required String caregiverId,
+    required String ownerName,
+    required String caregiverName,
+    required String? caregiverPhotoUrl,
+    required String? caregiverEmail,
+  }) async {
+    try {
+      // Check if chat room exists
+      final snapshot = await _firestore
+          .collection('chat_rooms')
+          .where('ownerId', isEqualTo: ownerId)
+          .where('caregiverId', isEqualTo: caregiverId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.id;
+      }
+
+      // Create new chat room
+      final chatRoomRef = await _firestore.collection('chat_rooms').add({
+        'ownerId': ownerId,
+        'caregiverId': caregiverId,
+        'ownerName': ownerName,
+        'caregiverName': caregiverName,
+        'caregiverPhotoUrl': caregiverPhotoUrl,
+        'caregiverEmail': caregiverEmail,
+        'createdAt': Timestamp.now(),
+        'lastMessageAt': Timestamp.now(),
+        'lastMessage': '',
+        'unreadCount': 0,
+      });
+
+      return chatRoomRef.id;
+    } catch (e) {
+      debugPrint('Error creating chat room: $e');
+      return null;
+    }
+  }
+
+  /// Send a message in a chat room
+  Future<bool> sendChatMessage({
+    required String chatRoomId,
+    required String senderId,
+    required String senderName,
+    required String message,
+  }) async {
+    try {
+      await _firestore
+          .collection('chat_rooms')
+          .doc(chatRoomId)
+          .collection('messages')
+          .add({
+        'chatRoomId': chatRoomId,
+        'senderId': senderId,
+        'senderName': senderName,
+        'message': message,
+        'timestamp': Timestamp.now(),
+        'isRead': false,
+        'imageUrl': null,
+      });
+
+      // Update last message in chat room
+      await _firestore.collection('chat_rooms').doc(chatRoomId).update({
+        'lastMessage': message,
+        'lastMessageAt': Timestamp.now(),
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+      return false;
+    }
+  }
+
+  /// Get messages stream for a chat room
+  Stream<List<Map<String, dynamic>>> getChatMessages(String chatRoomId) {
+    try {
+      return _firestore
+          .collection('chat_rooms')
+          .doc(chatRoomId)
+          .collection('messages')
+          .orderBy('timestamp', descending: false)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs
+            .map((doc) => {...doc.data(), 'id': doc.id})
+            .toList();
+      });
+    } catch (e) {
+      debugPrint('Error getting messages: $e');
+      return Stream.value([]);
+    }
+  }
+
+  // ============================================================================
+  // REPORT METHODS
+  // ============================================================================
+
+  /// Submit a report against a caregiver
+  Future<bool> submitReport({
+    required String reporterId,
+    required String reporterName,
+    required String caregiverId,
+    required String caregiverName,
+    required String reason,
+    required String description,
+  }) async {
+    try {
+      await _firestore.collection('caregiver_reports').add({
+        'reporterId': reporterId,
+        'reporterName': reporterName,
+        'caregiverId': caregiverId,
+        'caregiverName': caregiverName,
+        'reason': reason,
+        'description': description,
+        'createdAt': Timestamp.now(),
+        'status': 'pending',
+        'adminNotes': null,
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Error submitting report: $e');
+      return false;
+    }
+  }
+
+  /// Get reports for a caregiver (admin only)
+  Future<List<Map<String, dynamic>>> getCaregiverReports(String caregiverId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('caregiver_reports')
+          .where('caregiverId', isEqualTo: caregiverId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => {...doc.data(), 'id': doc.id})
+          .toList();
+    } catch (e) {
+      debugPrint('Error getting reports: $e');
+      return [];
+    }
+  }
 }
+
 

@@ -178,5 +178,59 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && 
                        resource.data.userId == request.auth.uid;
     }
+    
+    // Chat Rooms collection (alternative chat structure)
+    match /chat_rooms/{chatRoomId} {
+      // Users involved in a booking can read the chat room
+      allow read: if isAuthenticated() && (
+        chatRoomId.matches('.*' + request.auth.uid + '.*')
+      );
+      
+      // Create chat room when booking is confirmed
+      allow create: if isAuthenticated();
+      
+      // Participants can update chat metadata
+      allow update: if isAuthenticated() && (
+        chatRoomId.matches('.*' + request.auth.uid + '.*')
+      );
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Users in the chat can read messages
+        allow read: if isAuthenticated() && (
+          parent.parent.id.matches('.*' + request.auth.uid + '.*')
+        );
+        
+        // Users can create their own messages
+        allow create: if isAuthenticated() && 
+                        request.resource.data.senderId == request.auth.uid &&
+                        parent.parent.id.matches('.*' + request.auth.uid + '.*');
+        
+        // Users can update their own messages
+        allow update: if isAuthenticated() && 
+                        resource.data.senderId == request.auth.uid;
+        
+        // Users can delete their own messages
+        allow delete: if isAuthenticated() && 
+                        resource.data.senderId == request.auth.uid;
+      }
+    }
+    
+    // Caregiver Reports collection
+    match /caregiver_reports/{reportId} {
+      // Users can read their own reports
+      allow read: if isAuthenticated() &&
+                     resource.data.reporterId == request.auth.uid;
+      
+      // Authenticated users can create reports
+      allow create: if isAuthenticated() &&
+                      request.resource.data.reporterId == request.auth.uid;
+      
+      // Only admins can update reports
+      allow update: if isAdmin();
+      
+      // Only admins can delete reports
+      allow delete: if isAdmin();
+    }
   }
 }

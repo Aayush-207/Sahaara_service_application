@@ -11,5 +11,15 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if true;
     }
+
+    // Chat rooms collection - Explicit rules for development
+    match /chat_rooms/{chatRoomId} {
+      allow read, write: if true;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read, write: if true;
+      }
+    }
   }
 }
