@@ -511,6 +511,15 @@ class _HomeTabState extends State<HomeTab> {
   
   /// Show suggestions overlay
   bool _showSuggestions = false;
+  
+  /// Carousel page controller
+  late PageController _carouselController;
+  
+  /// Current carousel page
+  int _currentCarouselPage = 0;
+  
+  /// Carousel auto-play timer
+  Timer? _carouselTimer;
 
   // ============================================================================
   // LIFECYCLE METHODS
@@ -519,8 +528,10 @@ class _HomeTabState extends State<HomeTab> {
   @override
   void initState() {
     super.initState();
+    _carouselController = PageController(initialPage: 0);
     _loadFavorites();
     _searchController.addListener(_onSearchChanged);
+    _startCarouselAutoPlay();
     
     // Automatically request location permission on app load
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -742,6 +753,8 @@ class _HomeTabState extends State<HomeTab> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _debounceTimer?.cancel();
+    _carouselTimer?.cancel();
+    _carouselController.dispose();
     super.dispose();
   }
 
@@ -1557,8 +1570,43 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  /// Build featured promotion section
+  /// Start carousel auto-play timer
+  void _startCarouselAutoPlay() {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (_carouselController.hasClients) {
+        final nextPage = (_currentCarouselPage + 1) % 3;
+        _carouselController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  /// Build featured promotion section with carousel
   Widget _buildFeaturedSection() {
+    final offers = [
+      {
+        'title': 'Premium Care',
+        'subtitle': 'Get quality service',
+        'image': 'assets/images/Offer1.jpg',
+        'color': AppColors.secondary,
+      },
+      {
+        'title': 'Special Offer',
+        'subtitle': 'Exclusive deals today',
+        'image': 'assets/images/Offer2.jpg',
+        'color': AppColors.primary,
+      },
+      {
+        'title': 'Best Service',
+        'subtitle': 'Trusted caregivers',
+        'image': 'assets/images/Offer3.jpg',
+        'color': AppColors.accent,
+      },
+    ];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Column(
@@ -1575,91 +1623,179 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
           const SizedBox(height: 14),
-          InkWell(
-            onTap: () {
-              // Navigate to premium care details
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Premium Care - 20% off first booking!'),
-                  backgroundColor: AppColors.primary,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+          SizedBox(
+            height: 180,
+            child: PageView.builder(
+              controller: _carouselController,
+              onPageChanged: (index) {
+                setState(() => _currentCarouselPage = index);
+              },
+              itemCount: offers.length,
+              itemBuilder: (context, index) {
+                final offer = offers[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: _buildOfferCard(
+                    offer['title'] as String,
+                    offer['subtitle'] as String,
+                    offer['image'] as String,
+                    offer['color'] as Color,
                   ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.secondary,
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Carousel indicators
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (int i = 0; i < offers.length; i++)
+                  GestureDetector(
+                    onTap: () {
+                      _carouselController.animateToPage(
+                        i,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    child: Container(
+                      width: _currentCarouselPage == i ? 24 : 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: _currentCarouselPage == i
+                            ? AppColors.primary
+                            : AppColors.border,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build individual offer card with gradient and image
+  Widget _buildOfferCard(String title, String subtitle, String imagePath, Color color) {
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$title - $subtitle'),
+            backgroundColor: color,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background image with fade effect from right
+            Positioned.fill(
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Premium Care',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Get 20% off on your first booking with verified caregivers',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'Learn More',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                              fontFamily: 'Montserrat',
-                            ),
-                          ),
-                        ),
+            ),
+            // Gradient overlay from left (full color to center, then fade)
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        color.withValues(alpha: 0.98),
+                        color.withValues(alpha: 0.98),
+                        color.withValues(alpha: 0.5),
+                        color.withValues(alpha: 0.1),
+                        Colors.transparent,
                       ],
+                      stops: const [0.0, 0.4, 0.6, 0.8, 1.0],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.star_rounded,
-                      size: 32,
+                ),
+              ),
+            ),
+            // Text content on the left
+            Positioned(
+              left: 20,
+              top: 20,
+              bottom: 20,
+              right: 80,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                       color: Colors.white,
+                      fontFamily: 'Montserrat',
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontFamily: 'Montserrat',
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Tap to view',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontFamily: 'Montserrat',
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
