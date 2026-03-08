@@ -520,6 +520,9 @@ class _HomeTabState extends State<HomeTab> {
   
   /// Carousel auto-play timer
   Timer? _carouselTimer;
+  
+  /// Cached top caregivers future to prevent reloading on carousel slide
+  late Future<List<UserModel>> _topCaregiversFuture;
 
   // ============================================================================
   // LIFECYCLE METHODS
@@ -529,6 +532,7 @@ class _HomeTabState extends State<HomeTab> {
   void initState() {
     super.initState();
     _carouselController = PageController(initialPage: 0);
+    _topCaregiversFuture = _firestoreService.getTopCaregivers(limit: 5);
     _loadFavorites();
     _searchController.addListener(_onSearchChanged);
     _startCarouselAutoPlay();
@@ -1354,7 +1358,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
           const SizedBox(height: 14),
           FutureBuilder<List<UserModel>>(
-            future: _firestoreService.getTopCaregivers(limit: 5),
+            future: _topCaregiversFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
