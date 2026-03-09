@@ -152,10 +152,13 @@ class MessagesScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => ChatScreen(
-                    chatId: chat.id,
-                    currentUserId: currentUserId,
-                    otherUserId: otherUserId,
-                    otherUserName: otherUserName,
+                    ownerId: currentUserId,
+                    ownerName: 'User',
+                    caregiverId: otherUserId,
+                    caregiverName: otherUserName,
+                    caregiverPhotoUrl: otherUser?.photoUrl ?? '',
+                    caregiverEmail: otherUser?.email ?? '',
+                    caregiverRating: otherUser?.rating,
                   ),
                 ),
               );

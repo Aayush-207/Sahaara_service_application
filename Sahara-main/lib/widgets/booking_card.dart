@@ -381,7 +381,8 @@ class BookingCard extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ChatScreen(
-                          chatRoomId: '${booking.ownerId}_${booking.caregiverId}',
+                          ownerId: booking.ownerId,
+                          ownerName: 'User', // Will be set by current user in ChatScreen
                           caregiverId: booking.caregiverId,
                           caregiverName: caregiver!.name,
                           caregiverPhotoUrl: caregiver!.photoUrl ?? '',

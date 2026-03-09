@@ -1,35 +1,50 @@
 rules_version = '2';
 
-// ⚠️ DEVELOPMENT MODE - OPEN ACCESS FOR SEEDING
-// This allows the seeder to populate the database
-// 
-// IMPORTANT: Before deploying to production:
-// 1. Replace this file content with firestore.rules.prod
-// 2. Deploy to Firebase Console
-//
-// Current Mode: DEVELOPMENT (Open Access)
-
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // DEVELOPMENT: Allow all reads and writes for seeding
-    // This is TEMPORARY for development only
-    match /{document=**} {
-      allow read, write: if true;
+    // Allow authenticated users to access their own data
+    function isAuthenticated() {
+      return request.auth.uid != null;
     }
-
-    // Chat rooms collection - Explicit rules for development
+    
+    // Chat rooms - Allow authenticated users
     match /chat_rooms/{chatRoomId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
       
       // Messages subcollection
       match /messages/{messageId} {
-        allow read, write: if true;
+        allow read, write: if isAuthenticated();
       }
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if request.auth.uid == userId;
+      
+      // Pets subcollection
+      match /pets/{petId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Reports collection
+    match /reports/{reportId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Generic fallback - deny by default
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
 
-// PRODUCTION RULES ARE SAVED IN: firestore.rules.prod
-// Copy that file here when ready for production!
 

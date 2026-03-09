@@ -12,7 +12,9 @@ import 'package:intl/intl.dart';
 /// Chat Screen - WhatsApp-like messaging interface for booked caregivers
 /// Features: Real-time messaging, caregiver profiles, info dialog
 class ChatScreen extends StatefulWidget {
-  final String chatRoomId;
+  final String? chatRoomId; // Optional - will be created if not provided
+  final String ownerId;
+  final String ownerName;
   final String caregiverId;
   final String caregiverName;
   final String caregiverPhotoUrl;
@@ -21,7 +23,9 @@ class ChatScreen extends StatefulWidget {
 
   const ChatScreen({
     super.key,
-    required this.chatRoomId,
+    this.chatRoomId,
+    required this.ownerId,
+    required this.ownerName,
     required this.caregiverId,
     required this.caregiverName,
     required this.caregiverPhotoUrl,
@@ -39,14 +43,56 @@ class _ChatScreenState extends State<ChatScreen> {
   final _firestoreService = FirestoreService();
   final _soundService = SoundService();
   late String _currentUserId;
+  late String _actualChatRoomId;
   bool _isSending = false;
   bool _hasReported = false;
+  bool _isInitializing = true;
+  String? _initError;
 
   @override
   void initState() {
     super.initState();
     _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    _checkIfAlreadyReported();
+    _initializeChatRoom();
+  }
+
+  /// Initialize or create chat room if needed
+  Future<void> _initializeChatRoom() async {
+    try {
+      if (widget.chatRoomId != null && widget.chatRoomId!.isNotEmpty) {
+        // Use provided chat room ID
+        _actualChatRoomId = widget.chatRoomId!;
+      } else {
+        // Create/get chat room using owner and caregiver info
+        final roomId = await _firestoreService.getOrCreateChatRoom(
+          ownerId: widget.ownerId,
+          caregiverId: widget.caregiverId,
+          ownerName: widget.ownerName,
+          caregiverName: widget.caregiverName,
+          caregiverPhotoUrl: widget.caregiverPhotoUrl,
+          caregiverEmail: widget.caregiverEmail,
+        );
+
+        if (roomId == null) {
+          throw Exception('Failed to create chat room');
+        }
+        _actualChatRoomId = roomId;
+      }
+
+      if (mounted) {
+        setState(() => _isInitializing = false);
+      }
+      
+      _checkIfAlreadyReported();
+    } catch (e) {
+      debugPrint('❌ Error initializing chat room: $e');
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+          _initError = e.toString();
+        });
+      }
+    }
   }
 
   @override
@@ -130,29 +176,48 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isSending = true);
 
     try {
-      await _firestoreService.sendChatMessage(
-        chatRoomId: widget.chatRoomId,
+      debugPrint('📤 Attempting to send message: $message');
+      
+      final success = await _firestoreService.sendChatMessage(
+        chatRoomId: _actualChatRoomId,
         senderId: _currentUserId,
         senderName: FirebaseAuth.instance.currentUser?.displayName ?? 'User',
         message: message,
       );
       
-      _soundService.playTap();
-      
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+      if (success) {
+        debugPrint('✅ Message sent successfully');
+        await _soundService.playTap();
+        
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      } else {
+        debugPrint('❌ Message send returned false');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to send message. Please try again.'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
+      debugPrint('❌ Error sending message: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send message'),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -282,78 +347,162 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _firestoreService.getChatMessages(widget.chatRoomId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+            child: _isInitializing
+                ? const Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
-                  );
-                }
+                  )
+                : _initError != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Failed to initialize chat',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _initError!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textTertiary,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isInitializing = true;
+                                  _initError = null;
+                                });
+                                _initializeChatRoom();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Retry',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : StreamBuilder<List<Map<String, dynamic>>>(
+                        stream: _firestoreService.getChatMessages(_actualChatRoomId),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(color: AppColors.primary),
+                            );
+                          }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 48, color: AppColors.textTertiary),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Unable to load messages',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                          if (snapshot.hasError) {
+                            debugPrint('Chat stream error: ${snapshot.error}');
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.error_outline, size: 48, color: AppColors.textTertiary),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Unable to load messages',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    snapshot.error.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textTertiary,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ElevatedButton(
+                                    onPressed: () => setState(() {}),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Try Again',
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
 
-                final messages = snapshot.data ?? [];
+                          final messages = snapshot.data ?? [];
 
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 48,
-                            color: AppColors.primary.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'No messages yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Start the conversation',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textTertiary,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                          if (messages.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.08),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 48,
+                                      color: AppColors.primary.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    'No messages yet',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Start the conversation',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textTertiary,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
 
                 return ListView.builder(
                   controller: _scrollController,

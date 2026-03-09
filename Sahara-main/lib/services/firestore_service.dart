@@ -339,6 +339,20 @@ class FirestoreService {
     required String message,
   }) async {
     try {
+      debugPrint('📤 Sending message to chat room: $chatRoomId');
+      
+      // First verify the chat room exists
+      final roomDoc = await _firestore
+          .collection('chat_rooms')
+          .doc(chatRoomId)
+          .get();
+      
+      if (!roomDoc.exists) {
+        debugPrint('❌ Chat room does not exist: $chatRoomId');
+        throw Exception('Chat room not found. Please refresh and try again.');
+      }
+      
+      // Add message
       await _firestore
           .collection('chat_rooms')
           .doc(chatRoomId)
@@ -359,31 +373,31 @@ class FirestoreService {
         'lastMessageAt': Timestamp.now(),
       });
 
+      debugPrint('✅ Message sent successfully');
       return true;
     } catch (e) {
-      debugPrint('Error sending message: $e');
+      debugPrint('❌ Error sending message: $e');
       return false;
     }
   }
 
   /// Get messages stream for a chat room
   Stream<List<Map<String, dynamic>>> getChatMessages(String chatRoomId) {
-    try {
-      return _firestore
-          .collection('chat_rooms')
-          .doc(chatRoomId)
-          .collection('messages')
-          .orderBy('timestamp', descending: false)
-          .snapshots()
-          .map((snapshot) {
-        return snapshot.docs
-            .map((doc) => {...doc.data(), 'id': doc.id})
-            .toList();
-      });
-    } catch (e) {
-      debugPrint('Error getting messages: $e');
-      return Stream.value([]);
-    }
+    debugPrint('📥 Getting messages for chat room: $chatRoomId');
+    
+    return _firestore
+        .collection('chat_rooms')
+        .doc(chatRoomId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false)
+        .snapshots()
+        .map((snapshot) {
+          final messages = snapshot.docs
+              .map((doc) => {...doc.data(), 'id': doc.id})
+              .toList();
+          debugPrint('✅ Retrieved ${messages.length} messages');
+          return messages;
+        });
   }
 
   // ============================================================================
