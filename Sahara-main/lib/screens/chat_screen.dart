@@ -526,6 +526,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (!isMe) const SizedBox(width: 40),
                           Flexible(
                             child: Container(
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                              ),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: isMe ? AppColors.primary : AppColors.background,
@@ -563,7 +566,6 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                             ),
                           ),
-                          if (isMe) const SizedBox(width: 40),
                         ],
                       ),
                     );
