@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
@@ -163,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Future<void> _handleGoogleSignIn() async {
-    _soundService.playClick();
+    await _soundService.playClick();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final navigator = Navigator.of(context);
     
@@ -187,15 +188,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         );
       } else {
         if (authProvider.errorMessage != null && authProvider.errorMessage!.isNotEmpty) {
-          _soundService.playError();
+          await _soundService.playError();
           if (!context.mounted) return;
           _showErrorSnackBar(authProvider.errorMessage!);
+        } else {
+          await _soundService.playError();
+          if (!context.mounted) return;
+          _showErrorSnackBar('Google Sign-In failed. Please try again.');
         }
       }
     } catch (e) {
+      debugPrint('❌ Google Sign-In exception: $e');
       if (mounted) {
-        _soundService.playError();
-        _showErrorSnackBar('Google Sign-In failed. Please try again.');
+        unawaited(_soundService.playError());
+        _showErrorSnackBar('Google Sign-In failed: Please check your internet connection and try again.');
       }
     }
   }

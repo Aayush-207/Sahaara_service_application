@@ -14,6 +14,7 @@ import 'providers/favorites_provider.dart';
 import 'providers/location_provider.dart';
 import 'screens/splash_screen_enhanced.dart';
 import 'services/notification_service.dart';
+import 'services/sound_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,13 @@ void main() async {
     await dotenv.load(fileName: ".env");
   } catch (e) {
     debugPrint('Error loading .env file: $e');
+  }
+  
+  // Initialize Sound Service early
+  try {
+    await SoundService().init();
+  } catch (e) {
+    debugPrint('SoundService initialization error: $e');
   }
   
   // Initialize Firebase
