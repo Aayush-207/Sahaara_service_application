@@ -505,10 +505,12 @@ class _ChatScreenState extends State<ChatScreen> {
                           }
 
                 return ListView.builder(
+                  key: const ValueKey('chat-messages'),
                   controller: _scrollController,
                   reverse: true,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   itemCount: messages.length,
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
                     final messageData = messages[index];
                     final message = ChatMessageModel.fromMap(
@@ -527,7 +529,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Flexible(
                             child: Container(
                               constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                                maxWidth: MediaQuery.of(context).size.width * 0.65,
                               ),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
@@ -567,7 +569,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                           // Message options menu (only for own messages)
-                          if (isMe)
+                          if (isMe) ...[
+                            const SizedBox(width: 4),
                             PopupMenuButton<String>(
                               onSelected: (String choice) {
                                 if (choice == 'edit') {
@@ -598,9 +601,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                                 ),
                               ],
-                              icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textTertiary),
+                              icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textSecondary),
                               padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              offset: const Offset(0, 24),
                             ),
+                          ],
                         ],
                       ),
                     );
@@ -787,7 +793,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   maxLines: 5,
                   minLines: 1,
                   textCapitalization: TextCapitalization.sentences,
-                  onChanged: (value) => setState(() {}),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
