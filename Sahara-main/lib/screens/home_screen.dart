@@ -19,6 +19,7 @@ import 'my_pets_screen.dart';
 import 'messages_coming_soon_screen.dart';
 import 'notifications_screen.dart';
 import 'tracking_screen.dart';
+import 'adopt_pet_screen.dart';
 import '../theme/app_colors.dart';
 
 /// Home Screen - Main app entry point after authentication
@@ -802,6 +803,7 @@ class _HomeTabState extends State<HomeTab> {
               SliverToBoxAdapter(child: _buildServices()),
               SliverToBoxAdapter(child: _buildFeaturedSection()),
               SliverToBoxAdapter(child: _buildTopCaregivers()),
+              SliverToBoxAdapter(child: _buildAdoptPet()),
               SliverToBoxAdapter(child: _buildTipsSection()),
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
@@ -1806,6 +1808,90 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build Adopt a Pet section with CTA button
+  Widget _buildAdoptPet() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primary.withOpacity(0.9),
+              AppColors.primary.withOpacity(0.95),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Give a Pet a Loving Home',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Montserrat',
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Browse our selection of pets awaiting adoption. Find your perfect companion today.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: Colors.white70,
+                fontFamily: 'Montserrat',
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdoptPetScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Explore Pets for Adoption',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Montserrat',
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ),
             ),
           ],

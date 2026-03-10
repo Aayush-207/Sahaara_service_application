@@ -566,6 +566,41 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                             ),
                           ),
+                          // Message options menu (only for own messages)
+                          if (isMe)
+                            PopupMenuButton<String>(
+                              onSelected: (String choice) {
+                                if (choice == 'edit') {
+                                  _editMessage(message);
+                                } else if (choice == 'delete') {
+                                  _deleteMessage(message.id);
+                                }
+                              },
+                              itemBuilder: (BuildContext context) => [
+                                const PopupMenuItem<String>(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_rounded, size: 18, color: AppColors.primary),
+                                      SizedBox(width: 8),
+                                      Text('Edit', style: TextStyle(fontFamily: 'Montserrat')),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete_rounded, size: 18, color: AppColors.error),
+                                      SizedBox(width: 8),
+                                      Text('Delete', style: TextStyle(fontFamily: 'Montserrat', color: AppColors.error)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textTertiary),
+                              padding: EdgeInsets.zero,
+                            ),
                         ],
                       ),
                     );
@@ -785,6 +820,123 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _editMessage(ChatMessageModel message) {
+    _messageController.text = message.message;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Edit Message',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: TextField(
+          controller: _messageController,
+          maxLines: 4,
+          minLines: 1,
+          decoration: InputDecoration(
+            hintText: 'Edit your message...',
+            hintStyle: const TextStyle(fontFamily: 'Montserrat', color: AppColors.textTertiary),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+          ),
+          style: const TextStyle(fontFamily: 'Montserrat'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _messageController.clear();
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.textPrimary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (_messageController.text.trim().isNotEmpty) {
+                try {
+                  await _firestoreService.updateMessage(
+                    _actualChatRoomId,
+                    message.id,
+                    _messageController.text.trim(),
+                  );
+                  _soundService.playSuccess();
+                  _messageController.clear();
+                  if (mounted) Navigator.pop(context);
+                } catch (e) {
+                  _soundService.playError();
+                  debugPrint('Error updating message: $e');
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text(
+              'Update',
+              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteMessage(String messageId) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Message',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to delete this message? This action cannot be undone.',
+          style: TextStyle(fontFamily: 'Montserrat', color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.textPrimary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _firestoreService.deleteMessage(_actualChatRoomId, messageId);
+                _soundService.playSuccess();
+                if (mounted) Navigator.pop(context);
+              } catch (e) {
+                _soundService.playError();
+                debugPrint('Error deleting message: $e');
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text(
+              'Delete',
+              style: TextStyle(fontFamily: 'Montserrat', color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }

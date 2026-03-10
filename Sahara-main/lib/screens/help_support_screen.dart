@@ -29,9 +29,9 @@ class HelpSupportScreen extends StatelessWidget {
             _buildContactCard(
               icon: Icons.email_outlined,
               title: 'Email Us',
-              subtitle: 'support@sahara.com',
+              subtitle: 'notaayush1213@gmail.com',
               gradient: AppColors.primaryGradient,
-              onTap: () => _launchEmail('support@sahara.com'),
+              onTap: () => _launchEmail('notaayush1213@gmail.com'),
             ),
             const SizedBox(height: 10),
             _buildContactCard(

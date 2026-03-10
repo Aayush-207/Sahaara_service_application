@@ -47,7 +47,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text(
-          'My Dogs',
+          'My Pets',
           style: TextStyle(
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w700,
@@ -282,7 +282,7 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
         title: const Text(
-          'Delete Dog',
+          'Delete Pet',
           style: TextStyle(
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w700,
@@ -533,7 +533,7 @@ class _AddPetDialogState extends State<AddPetDialog> {
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
-        _isEditing ? 'Edit Dog' : 'Add Dog',
+        _isEditing ? 'Edit Pet' : 'Add Pet',
         style: const TextStyle(
           fontFamily: 'Montserrat',
           fontWeight: FontWeight.w700,
@@ -634,7 +634,7 @@ class _AddPetDialogState extends State<AddPetDialog> {
                   color: AppColors.textPrimary,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Dog Name',
+                  labelText: 'Pet Name',
                   labelStyle: const TextStyle(fontFamily: 'Montserrat'),
                   prefixIcon: const Icon(Icons.pets_rounded, color: AppColors.primary),
                   border: OutlineInputBorder(

@@ -384,6 +384,48 @@ class FirestoreService {
         });
   }
 
+  /// Update a message in a chat room
+  Future<void> updateMessage(
+    String chatRoomId,
+    String messageId,
+    String newMessage,
+  ) async {
+    try {
+      debugPrint('✏️ Updating message: $messageId');
+      await _firestore
+          .collection('chat_rooms')
+          .doc(chatRoomId)
+          .collection('messages')
+          .doc(messageId)
+          .update({
+            'message': newMessage,
+            'edited': true,
+            'editedAt': Timestamp.now(),
+          });
+      debugPrint('✅ Message updated successfully');
+    } catch (e) {
+      debugPrint('❌ Error updating message: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a message from a chat room
+  Future<void> deleteMessage(String chatRoomId, String messageId) async {
+    try {
+      debugPrint('🗑️ Deleting message: $messageId');
+      await _firestore
+          .collection('chat_rooms')
+          .doc(chatRoomId)
+          .collection('messages')
+          .doc(messageId)
+          .delete();
+      debugPrint('✅ Message deleted successfully');
+    } catch (e) {
+      debugPrint('❌ Error deleting message: $e');
+      rethrow;
+    }
+  }
+
   // ============================================================================
   // REPORT METHODS
   // ============================================================================
