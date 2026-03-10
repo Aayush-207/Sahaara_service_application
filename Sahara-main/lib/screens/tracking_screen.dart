@@ -2,18 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../models/user_model.dart';
-import '../services/firestore_service.dart';
+import '../providers/location_provider.dart';
 import '../theme/app_colors.dart';
 import 'package:intl/intl.dart';
 
 /// Tracking Screen - Track pet location and service status
-/// 
-/// Features:
-/// - Google Maps view to show pet's current location
-/// - Real-time location tracking
-/// - Timeline view showing service progress
-/// - Service status indicators (Grooming, Cleaning, Bathing, Training)
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
 
@@ -22,9 +15,16 @@ class TrackingScreen extends StatefulWidget {
 }
 
 class _TrackingScreenState extends State<TrackingScreen> {
-  late GoogleMapController _mapController;
-  
-  // Sample data for tracking (in a real app, this would come from Firestore)
+  GoogleMapController? _mapController;
+  Set<Marker> _markers = {};
+
+  // Default location (Mumbai, India)
+  static const CameraPosition _defaultPosition = CameraPosition(
+    target: LatLng(19.0760, 72.8777),
+    zoom: 15,
+  );
+
+  // Sample data for tracking
   final List<ServiceActivity> activities = [
     ServiceActivity(
       service: 'Grooming',
@@ -55,6 +55,67 @@ class _TrackingScreenState extends State<TrackingScreen> {
       description: 'Vet appointment for vaccination',
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeLocation();
+    });
+  }
+
+  /// Initialize location and markers
+  Future<void> _initializeLocation() async {
+    try {
+      final locationProvider = context.read<LocationProvider>();
+      await locationProvider.getCurrentLocation();
+      if (mounted) {
+        setState(() {
+          _updateMarkers(locationProvider);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing location: $e');
+    }
+  }
+
+  /// Update map markers based on location
+  void _updateMarkers(LocationProvider locationProvider) {
+    _markers.clear();
+
+    final petLocation = locationProvider.currentPosition;
+    if (petLocation != null) {
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('pet_location'),
+          position: LatLng(petLocation.latitude, petLocation.longitude),
+          infoWindow: InfoWindow(
+            title: 'Pet Location',
+            snippet: locationProvider.currentAddress ?? 'Current Location',
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      );
+    } else {
+      // Add default marker if no location available
+      _markers.add(
+        const Marker(
+          markerId: MarkerId('default_location'),
+          position: LatLng(19.0760, 72.8777),
+          infoWindow: InfoWindow(
+            title: 'Pet Location',
+            snippet: 'Mumbai, India',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,10 +183,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Location Map
             _buildLocationMap(),
-            
-            // Service Timeline
             _buildServiceTimeline(),
           ],
         ),
@@ -140,7 +198,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Title
           const Text(
             'Current Location',
             style: TextStyle(
@@ -151,8 +208,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          
-          // Map Container
           Container(
             height: 300,
             decoration: BoxDecoration(
@@ -169,84 +224,95 @@ class _TrackingScreenState extends State<TrackingScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: GoogleMap(
-                initialCameraPosition: const CameraPosition(
-                  target: LatLng(19.0760, 72.8777), // Mumbai, India
-                  zoom: 15,
-                ),
-                onMapCreated: (controller) {
-                  _mapController = controller;
+                initialCameraPosition: _defaultPosition,
+                onMapCreated: (GoogleMapController controller) {
+                  try {
+                    _mapController = controller;
+                    debugPrint('✅ Google Maps initialized successfully');
+                  } catch (e) {
+                    debugPrint('❌ Error in onMapCreated: $e');
+                  }
                 },
+                markers: _markers,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: true,
                 mapType: MapType.normal,
+                zoomControlsEnabled: true,
               ),
             ),
           ),
-          
-          // Pet Location Info
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.location_on_rounded,
-                    color: AppColors.primary,
-                    size: 18,
+          Consumer<LocationProvider>(
+            builder: (context, locationProvider, _) {
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    width: 1,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Pet Location',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                          fontFamily: 'Montserrat',
-                        ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Grooming Salon, Bandra, Mumbai',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                          fontFamily: 'Montserrat',
-                        ),
+                      child: const Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.primary,
+                        size: 18,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Updated 5 minutes ago',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontFamily: 'Montserrat',
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Pet Location',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            locationProvider.currentAddress ??
+                                'Fetching location...',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            locationProvider.isLoading
+                                ? 'Updating...'
+                                : 'Updated just now',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -260,7 +326,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Title
           const Text(
             'Service Timeline',
             style: TextStyle(
@@ -271,32 +336,25 @@ class _TrackingScreenState extends State<TrackingScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
-          // Timeline
           _buildTimeline(),
         ],
       ),
     );
   }
 
-  /// Build timeline widget showing service progress
+  /// Build timeline widget
   Widget _buildTimeline() {
     return Column(
       children: List.generate(activities.length, (index) {
         final activity = activities[index];
-        final isCompleted = activity.status == 'completed';
-        final isInProgress = activity.status == 'in_progress';
 
         return Column(
           children: [
-            // Timeline Item
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Timeline connector
                 Column(
                   children: [
-                    // Circle indicator
                     Container(
                       width: 40,
                       height: 40,
@@ -318,8 +376,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         size: 20,
                       ),
                     ),
-                    
-                    // Vertical line (if not last)
                     if (index < activities.length - 1)
                       Container(
                         width: 2,
@@ -328,25 +384,22 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       ),
                   ],
                 ),
-                
                 const SizedBox(width: 16),
-                
-                // Content
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
-                      color: isInProgress
+                      color: activity.status == 'in_progress'
                           ? AppColors.secondary.withValues(alpha: 0.08)
-                          : isCompleted
+                          : activity.status == 'completed'
                               ? Colors.green.withValues(alpha: 0.04)
                               : Colors.grey.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isInProgress
+                        color: activity.status == 'in_progress'
                             ? AppColors.secondary.withValues(alpha: 0.2)
-                            : isCompleted
+                            : activity.status == 'completed'
                                 ? Colors.green.withValues(alpha: 0.2)
                                 : Colors.grey.withValues(alpha: 0.1),
                         width: 1,
@@ -355,7 +408,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Service name and status badge
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -371,10 +423,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             _buildStatusBadge(activity.status),
                           ],
                         ),
-                        
                         const SizedBox(height: 8),
-                        
-                        // Description
                         Text(
                           activity.description,
                           style: TextStyle(
@@ -384,10 +433,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             height: 1.4,
                           ),
                         ),
-                        
                         const SizedBox(height: 8),
-                        
-                        // Time information
                         Row(
                           children: [
                             Icon(
@@ -418,7 +464,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  /// Build status badge widget
+  /// Build status badge
   Widget _buildStatusBadge(String status) {
     Color bgColor;
     Color textColor;
@@ -476,7 +522,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  /// Get status color based on service status
+  /// Get status color
   Color _getStatusColor(String status) {
     switch (status) {
       case 'completed':
@@ -490,7 +536,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
   }
 
-  /// Get status icon based on service status
+  /// Get status icon
   IconData _getStatusIcon(String status) {
     switch (status) {
       case 'completed':
@@ -504,7 +550,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
   }
 
-  /// Format activity time for display
+  /// Format activity time
   String _formatActivityTime(ServiceActivity activity) {
     if (activity.status == 'pending') {
       return 'Starts ${DateFormat('hh:mm a').format(activity.startTime)}';
@@ -516,10 +562,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 }
 
-/// Model for service activities
+/// Service Activity Model
 class ServiceActivity {
   final String service;
-  final String status; // 'completed', 'in_progress', 'pending'
+  final String status;
   final DateTime startTime;
   final DateTime? endTime;
   final String description;

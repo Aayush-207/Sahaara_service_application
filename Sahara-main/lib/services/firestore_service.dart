@@ -35,40 +35,42 @@ class FirestoreService {
   // Get top rated caregivers
   Future<List<UserModel>> getTopCaregivers({int limit = 10}) async {
     try {
-      // Try with orderBy first
+      debugPrint('Fetching top caregivers (limit: $limit)');
+      
+      // Get all caregivers and sort in memory to avoid index requirements
       final snapshot = await _firestore
           .collection('users')
           .where('userType', isEqualTo: 'caregiver')
-          .orderBy('rating', descending: true)
-          .limit(limit)
           .get();
 
-      return snapshot.docs
+      final caregivers = snapshot.docs
           .map((doc) => UserModel.fromMap(doc.data(), doc.id))
           .toList();
-    } catch (e) {
-      debugPrint('Error with orderBy query, falling back to simple query: $e');
-      // Fallback: Get all caregivers and sort in memory
-      try {
-        final snapshot = await _firestore
-            .collection('users')
-            .where('userType', isEqualTo: 'caregiver')
-            .get();
-
-        final caregivers = snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
-            .toList();
-        
-        // Sort by rating in memory
-        caregivers.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
-        
-        // Return limited results
-        return caregivers.take(limit).toList();
-      } catch (e2) {
-        debugPrint('Error getting caregivers: $e2');
+      
+      if (caregivers.isEmpty) {
+        debugPrint('No caregivers found');
         return [];
       }
+      
+      // Sort by rating in memory
+      caregivers.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+      
+      final result = caregivers.take(limit).toList();
+      debugPrint('Found ${result.length} top caregivers');
+      return result;
+    } catch (e) {
+      debugPrint('Error getting top caregivers: $e');
+      return [];
     }
+  }
+
+  // Get top rated caregivers as a stream for real-time updates
+  Stream<List<UserModel>> getTopCaregiversStream({int limit = 10}) {
+    return getCaregivers().map((caregivers) {
+      // Sort by rating in memory
+      caregivers.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+      return caregivers.take(limit).toList();
+    });
   }
 
   // Search caregivers by service
@@ -154,21 +156,12 @@ class FirestoreService {
       return _firestore
           .collection('bookings')
           .where('ownerId', isEqualTo: userId)
-          .orderBy('scheduledDate', descending: true)
           .snapshots()
-          .handleError((error) {
-            debugPrint('Error with orderBy query: $error');
-            // Fallback to query without orderBy
-            return _firestore
-                .collection('bookings')
-                .where('ownerId', isEqualTo: userId)
-                .snapshots();
-          })
           .map((snapshot) {
             final bookings = snapshot.docs
                 .map((doc) => BookingModel.fromMap(doc.data(), doc.id))
                 .toList();
-            // Sort in memory if orderBy failed
+            // Sort by date in memory to avoid index requirement
             bookings.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
             return bookings;
           });
@@ -185,21 +178,12 @@ class FirestoreService {
       return _firestore
           .collection('bookings')
           .where('caregiverId', isEqualTo: caregiverId)
-          .orderBy('scheduledDate', descending: true)
           .snapshots()
-          .handleError((error) {
-            debugPrint('Error with orderBy query: $error');
-            // Fallback to query without orderBy
-            return _firestore
-                .collection('bookings')
-                .where('caregiverId', isEqualTo: caregiverId)
-                .snapshots();
-          })
           .map((snapshot) {
             final bookings = snapshot.docs
                 .map((doc) => BookingModel.fromMap(doc.data(), doc.id))
                 .toList();
-            // Sort in memory if orderBy failed
+            // Sort by date in memory to avoid index requirement
             bookings.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
             return bookings;
           });

@@ -81,5 +81,8 @@
 	<string>Sahara needs your location to find nearby pet caregivers and provide location-based services.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Sahara may need microphone access for video calls with caregivers.</string>
+	<!-- Google Maps API Key -->
+	<key>com.google.ios.maps.API_KEY</key>
+	<string>AIzaSyDvezV3O3RiQ_L76KYMlWyeRUpafqb8JoY</string>
 </dict>
 </plist>
