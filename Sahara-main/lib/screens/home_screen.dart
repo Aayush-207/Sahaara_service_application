@@ -399,8 +399,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           
           // Perform action immediately (overlay stays in tree, just invisible)
           if (label.contains('Pet')) {
-            // Switch to Pets tab
-            setState(() => _selectedIndex = 1);
+            // Navigate to My Pets screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyPetsScreen()),
+            );
           } else if (label.contains('Service')) {
             Navigator.push(
               context,

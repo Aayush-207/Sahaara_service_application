@@ -58,12 +58,33 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            onPressed: () {
-              _soundService.playTap();
-              _showAddPetDialog();
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Center(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _soundService.playTap();
+                  _showAddPetDialog();
+                },
+                icon: const Icon(Icons.add_rounded, size: 20),
+                label: const Text(
+                  'Add',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -369,12 +390,12 @@ class _AddPetDialogState extends State<AddPetDialog> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.existingPet?.name ?? '');
+    _nameController = TextEditingController(text: widget.existingPet?.name ?? 'Max');
     _ageController = TextEditingController(
-      text: widget.existingPet != null ? widget.existingPet!.age.toString() : '',
+      text: widget.existingPet != null ? widget.existingPet!.age.toString() : '2',
     );
     _weightController = TextEditingController(
-      text: widget.existingPet != null ? widget.existingPet!.weight.toString() : '',
+      text: widget.existingPet != null ? widget.existingPet!.weight.toString() : '25.0',
     );
     _selectedBreed = widget.existingPet?.breed ?? 'Labrador Retriever';
     _petPhotoUrl = widget.existingPet?.photoUrl;

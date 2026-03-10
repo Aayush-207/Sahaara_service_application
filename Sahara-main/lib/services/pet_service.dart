@@ -5,12 +5,13 @@ import '../models/pet_model.dart';
 class PetService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Get user's pets
+  // Get user's pets from the correct subcollection path
   Future<List<PetModel>> getUserPets(String userId) async {
     try {
       final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
           .collection('pets')
-          .where('ownerId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .get();
 
@@ -22,8 +23,9 @@ class PetService {
       // Fallback: try without orderBy if composite index doesn't exist
       try {
         final snapshot = await _firestore
+            .collection('users')
+            .doc(userId)
             .collection('pets')
-            .where('ownerId', isEqualTo: userId)
             .get();
 
         final pets = snapshot.docs
@@ -40,7 +42,7 @@ class PetService {
     }
   }
 
-  // Add pet
+  // Add pet to the correct subcollection path
   Future<String> addPet(PetModel pet) async {
     try {
       debugPrint('Adding pet to Firestore: ${pet.name}');
@@ -49,7 +51,11 @@ class PetService {
       final petData = pet.toMap(includeId: false);
       debugPrint('Pet data: $petData');
       
-      final doc = await _firestore.collection('pets').add(petData);
+      final doc = await _firestore
+          .collection('users')
+          .doc(pet.ownerId)
+          .collection('pets')
+          .add(petData);
       debugPrint('Pet added successfully with ID: ${doc.id}');
       return doc.id;
     } catch (e) {
@@ -58,7 +64,7 @@ class PetService {
     }
   }
 
-  // Update pet
+  // Update pet in the correct subcollection path
   Future<void> updatePet(PetModel pet) async {
     try {
       if (pet.id.isEmpty) {
@@ -70,7 +76,12 @@ class PetService {
       // Get pet data without ID
       final petData = pet.toMap(includeId: false);
       
-      await _firestore.collection('pets').doc(pet.id).update(petData);
+      await _firestore
+          .collection('users')
+          .doc(pet.ownerId)
+          .collection('pets')
+          .doc(pet.id)
+          .update(petData);
       debugPrint('Pet updated successfully');
     } catch (e) {
       debugPrint('Error updating pet: $e');
@@ -78,15 +89,25 @@ class PetService {
     }
   }
 
-  // Delete pet
-  Future<void> deletePet(String petId) async {
-    await _firestore.collection('pets').doc(petId).delete();
+  // Delete pet from the correct subcollection path
+  Future<void> deletePet(String userId, String petId) async {
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('pets')
+        .doc(petId)
+        .delete();
   }
 
-  // Get pet by ID
-  Future<PetModel?> getPetById(String petId) async {
+  // Get pet by ID from the correct subcollection path
+  Future<PetModel?> getPetById(String userId, String petId) async {
     try {
-      final doc = await _firestore.collection('pets').doc(petId).get();
+      final doc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('pets')
+          .doc(petId)
+          .get();
       if (doc.exists) {
         return PetModel.fromMap(doc.data()!, doc.id);
       }

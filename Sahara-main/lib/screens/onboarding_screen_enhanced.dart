@@ -180,6 +180,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                 controller: _pageController,
                 onPageChanged: _onPageChanged,
                 itemCount: _pages.length,
+                physics: const PageScrollPhysics(),
+                scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) => _buildPage(_pages[index]),
               ),
             ),

@@ -137,7 +137,8 @@ class PetProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _petService.deletePet(petId);
+      // Pass userId (ownerId) to deletePet for correct subcollection path
+      await _petService.deletePet(pet.ownerId, petId);
       debugPrint('PetProvider: Pet deleted from Firestore');
       
       // Remove from local list instead of reloading

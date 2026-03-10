@@ -19,7 +19,7 @@ class ReportDialog extends StatefulWidget {
     this.onReported,
   });
 
-  @override---
+  @override
   State<ReportDialog> createState() => _ReportDialogState();
 }
 

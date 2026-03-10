@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import '../models/pet_model.dart';
+import '../models/pet_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -35,6 +37,12 @@ class AuthService {
       );
 
       await _firestore.collection('users').doc(user.uid).set(user.toMap());
+      
+      // Add default pet for new owner
+      if (userType == 'owner') {
+        await _addDefaultPet(user.uid);
+      }
+      
       return user;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -149,6 +157,12 @@ class AuthService {
 
         await _firestore.collection('users').doc(newUser.uid).set(newUser.toMap());
         debugPrint('Google Sign-In: New user profile created');
+        
+        // Add default pet for new owner
+        if (userType == 'owner') {
+          await _addDefaultPet(newUser.uid);
+        }
+        
         return newUser;
       }
     } on FirebaseAuthException catch (e) {
@@ -244,6 +258,42 @@ class AuthService {
     } catch (e) {
       debugPrint('❌ Failed to delete account: $e');
       throw Exception('Failed to delete account: $e');
+    }
+  }
+
+  /// Add default pet (Max) for new users
+  Future<void> _addDefaultPet(String userId) async {
+    try {
+      debugPrint('📦 Adding default pet for user: $userId');
+      
+      final defaultPet = PetModel(
+        id: '',
+        ownerId: userId,
+        name: 'Max',
+        type: 'Dog',
+        breed: 'Labrador Retriever',
+        age: 2,
+        weight: 25.0,
+        gender: 'Male',
+        color: 'Golden',
+        photoUrl: null,
+        medicalNotes: null,
+        vaccinations: null,
+        isNeutered: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('pets')
+          .add(defaultPet.toMap(includeId: false));
+      
+      debugPrint('✅ Default pet (Max) added successfully for user: $userId');
+    } catch (e) {
+      debugPrint('⚠️ Failed to add default pet: $e');
+      // Don't throw error - signup should succeed even if default pet fails
     }
   }
 }

@@ -12,7 +12,7 @@ import '../providers/auth_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/custom_button.dart';
 import '../theme/app_colors.dart';
-import 'messages_coming_soon_screen.dart';
+
 import 'booking_confirmation_screen.dart';
 
 /// Caregiver Detail Screen
@@ -182,19 +182,6 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> {
         content: const Text('Share profile'),
         backgroundColor: AppColors.info,
         duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  /// Handles message button press
-  Future<void> _handleMessage() async {
-    _soundService.playClick();
-    
-    // Navigate to Coming Soon screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const MessagesComingSoonScreen(),
       ),
     );
   }
@@ -985,15 +972,6 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> {
               ),
             ),
           ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: CustomButton(
-            text: 'Message',
-            backgroundColor: AppColors.surface,
-            textColor: AppColors.primary,
-            onPressed: _handleMessage,
-          ),
-        ),
         const SizedBox(width: 12),
         Expanded(
           child: CustomButton(
