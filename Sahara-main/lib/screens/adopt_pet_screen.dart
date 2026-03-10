@@ -25,7 +25,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
       type: 'Dog',
       breed: 'Golden Retriever',
       age: 2,
-      image: 'https://images.unsplash.com/photo-1633722715463-d30628819d26?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1670226882887-f1a9f9d22fb1?w=500&h=500&fit=crop',
       description: 'Luna is a friendly and energetic Golden Retriever who loves playing fetch and going on long walks. She\'s great with children and other pets.',
       adoptionFee: 200,
     ),
@@ -35,7 +35,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
       type: 'Dog',
       breed: 'German Shepherd',
       age: 3,
-      image: 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1568572933382-74d440642117?w=500&h=500&fit=crop',
       description: 'Max is a loyal and protective German Shepherd. He\'s well-trained, obedient, and makes an excellent family companion.',
       adoptionFee: 250,
     ),
@@ -45,7 +45,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
       type: 'Dog',
       breed: 'Beagle',
       age: 1,
-      image: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?w=500&h=500&fit=crop',
       description: 'Bella is an adorable young Beagle full of energy and curiosity. She\'s playful, social, and loves being around people.',
       adoptionFee: 150,
     ),
@@ -55,7 +55,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
       type: 'Dog',
       breed: 'Labrador',
       age: 4,
-      image: 'https://images.unsplash.com/photo-1601758228658-3bda3b0b28a1?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1587300003388-59208ccbafca?w=500&h=500&fit=crop',
       description: 'Charlie is a calm and gentle Labrador who loves cuddles and short walks. Perfect for families with young children.',
       adoptionFee: 200,
     ),
@@ -65,7 +65,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
       type: 'Cat',
       breed: 'Persian',
       age: 2,
-      image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1574144611937-0df059b5ef3e?w=500&h=500&fit=crop',
       description: 'Daisy is a beautiful Persian cat who enjoys indoor living. She\'s affectionate and loves being petted.',
       adoptionFee: 100,
     ),
@@ -75,7 +75,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
       type: 'Cat',
       breed: 'Bengal',
       age: 1,
-      image: 'https://images.unsplash.com/photo-1606214174585-fe31582dc1d7?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1606214174585-fe31582dc1d7?w=500&h=500&fit=crop',
       description: 'Tiger is an energetic Bengal cat with beautiful markings. He\'s playful and loves interactive toys.',
       adoptionFee: 120,
     ),
@@ -120,9 +120,8 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
             child: GridView.builder(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75,
-                crossAxisSpacing: 12,
+                crossAxisCount: 1,
+                childAspectRatio: 0.99,
                 mainAxisSpacing: 16,
               ),
               itemCount: adoptablePets.length,
@@ -153,7 +152,6 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Pet Image
@@ -164,7 +162,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
               ),
               child: Container(
                 width: double.infinity,
-                height: 120,
+                height: 220,
                 color: Colors.grey[200],
                 child: CachedNetworkImage(
                   imageUrl: pet.image,
@@ -187,14 +185,15 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
             ),
             // Pet Info
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     pet.name,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                       fontFamily: 'Montserrat',
@@ -202,13 +201,14 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
+                  // Type and Age
                   Row(
                     children: [
                       Text(
                         pet.type,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.secondary,
                           fontFamily: 'Montserrat',
@@ -217,14 +217,14 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
                       const Text(
                         ' • ',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           color: AppColors.textSecondary,
                         ),
                       ),
                       Text(
                         '${pet.age} yr${pet.age > 1 ? 's' : ''}',
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.textSecondary,
                           fontFamily: 'Montserrat',
@@ -232,33 +232,48 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  // Action Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _showEnquireDialog(context, pet),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.secondary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                        minimumSize: const Size(double.infinity, 28),
-                      ),
-                      child: const Text(
-                        'Enquire Now',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
+                  const SizedBox(height: 3),
+                  // Breed
+                  Text(
+                    pet.breed,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                      fontFamily: 'Montserrat',
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
+              ),
+            ),
+            // Action Button at Bottom
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _showEnquireDialog(context, pet),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                    minimumSize: const Size(double.infinity, 44),
+                  ),
+                  child: const Text(
+                    'Enquire Now',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

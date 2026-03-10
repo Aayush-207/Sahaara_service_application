@@ -529,7 +529,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Flexible(
                             child: Container(
                               constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.65,
+                                maxWidth: MediaQuery.of(context).size.width * 0.7,
                               ),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
@@ -541,72 +541,79 @@ class _ChatScreenState extends State<ChatScreen> {
                                   bottomRight: Radius.circular(isMe ? 4 : 16),
                                 ),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    message.message,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: isMe ? Colors.white : AppColors.textPrimary,
-                                      fontFamily: 'Montserrat',
-                                      height: 1.3,
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          message.message,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: isMe ? Colors.white : AppColors.textPrimary,
+                                            fontFamily: 'Montserrat',
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _formatTime(message.timestamp),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isMe
+                                                ? Colors.white.withValues(alpha: 0.7)
+                                                : AppColors.textTertiary,
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _formatTime(message.timestamp),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: isMe
-                                          ? Colors.white.withValues(alpha: 0.7)
-                                          : AppColors.textTertiary,
-                                      fontFamily: 'Montserrat',
+                                  // Three dots menu inside message box (only for own messages)
+                                  if (isMe) ...[const SizedBox(width: 4)],
+                                  if (isMe)
+                                    PopupMenuButton<String>(
+                                      onSelected: (String choice) {
+                                        if (choice == 'edit') {
+                                          _editMessage(message);
+                                        } else if (choice == 'delete') {
+                                          _deleteMessage(message.id);
+                                        }
+                                      },
+                                      itemBuilder: (BuildContext context) => [
+                                        const PopupMenuItem<String>(
+                                          value: 'edit',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.edit_rounded, size: 18, color: AppColors.primary),
+                                              SizedBox(width: 8),
+                                              Text('Edit', style: TextStyle(fontFamily: 'Montserrat')),
+                                            ],
+                                          ),
+                                        ),
+                                        const PopupMenuItem<String>(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.delete_rounded, size: 18, color: AppColors.error),
+                                              SizedBox(width: 8),
+                                              Text('Delete', style: TextStyle(fontFamily: 'Montserrat', color: AppColors.error)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      icon: const Icon(Icons.more_vert_rounded, size: 16, color: Colors.white),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                      offset: const Offset(28, 20),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
                           ),
-                          // Message options menu (only for own messages)
-                          if (isMe) ...[
-                            const SizedBox(width: 4),
-                            PopupMenuButton<String>(
-                              onSelected: (String choice) {
-                                if (choice == 'edit') {
-                                  _editMessage(message);
-                                } else if (choice == 'delete') {
-                                  _deleteMessage(message.id);
-                                }
-                              },
-                              itemBuilder: (BuildContext context) => [
-                                const PopupMenuItem<String>(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit_rounded, size: 18, color: AppColors.primary),
-                                      SizedBox(width: 8),
-                                      Text('Edit', style: TextStyle(fontFamily: 'Montserrat')),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete_rounded, size: 18, color: AppColors.error),
-                                      SizedBox(width: 8),
-                                      Text('Delete', style: TextStyle(fontFamily: 'Montserrat', color: AppColors.error)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                              icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textSecondary),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                              offset: const Offset(0, 24),
-                            ),
-                          ],
                         ],
                       ),
                     );
@@ -761,8 +768,8 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Expanded(
               child: Container(
-                constraints: const BoxConstraints(minHeight: 48, maxHeight: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                constraints: const BoxConstraints(minHeight: 64, maxHeight: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(20),

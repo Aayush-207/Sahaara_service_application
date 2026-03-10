@@ -128,11 +128,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
   // ============================================================================
 
   void _onPageChanged(int index) {
-    setState(() => _currentPage = index);
-    _fadeController.reset();
-    _slideController.reset();
-    _fadeController.forward();
-    _slideController.forward();
+    if (_currentPage != index) {
+      setState(() => _currentPage = index);
+    }
   }
 
   void _skipToLogin() {
