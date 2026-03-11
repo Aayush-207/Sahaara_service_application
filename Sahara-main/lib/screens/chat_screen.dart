@@ -832,36 +832,41 @@ class _ChatScreenState extends State<ChatScreen> {
                   maxLines: 5,
                   minLines: 1,
                   textCapitalization: TextCapitalization.sentences,
-                  onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              width: 42,
-              height: 42,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: _isSending
-                  ? const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.5,
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _messageController,
+              builder: (context, value, _) {
+                final hasText = value.text.trim().isNotEmpty;
+                return Container(
+                  width: 42,
+                  height: 42,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: _isSending
+                      ? const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
+                          onPressed: hasText ? _sendMessage : null,
+                          padding: EdgeInsets.zero,
+                          tooltip: 'Send message',
                         ),
-                      ),
-                    )
-                  : IconButton(
-                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
-                      onPressed: _messageController.text.trim().isEmpty ? null : _sendMessage,
-                      padding: EdgeInsets.zero,
-                      tooltip: 'Send message',
-                    ),
+                );
+              },
             ),
           ],
         ),
