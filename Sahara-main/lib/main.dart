@@ -15,6 +15,7 @@ import 'providers/location_provider.dart';
 import 'screens/splash_screen_enhanced.dart';
 import 'services/notification_service.dart';
 import 'services/sound_service.dart';
+import 'services/booking_status_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +62,9 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
+  
+  // Start booking status service for automatic status updates
+  BookingStatusService().startService();
   
   runApp(const SaharaApp());
 }

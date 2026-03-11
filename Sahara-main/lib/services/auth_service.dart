@@ -4,12 +4,23 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../models/pet_model.dart';
-import '../models/pet_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  late final GoogleSignIn _googleSignIn;
+
+  AuthService() {
+    _initializeGoogleSignIn();
+  }
+
+  Future<void> _initializeGoogleSignIn() async {
+    _googleSignIn = GoogleSignIn.instance;
+    await _googleSignIn.initialize(
+      clientId: null, // Will use from google-services.json
+      serverClientId: null,
+    );
+  }
 
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -105,24 +116,20 @@ class AuthService {
   Future<UserModel?> signInWithGoogle({String userType = 'owner'}) async {
     try {
       // Trigger the Google Sign-In flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
+        scopeHint: ['email', 'profile'],
+      );
       
-      if (googleUser == null) {
-        // User canceled the sign-in
-        debugPrint('Google Sign-In: User canceled');
-        return null;
-      }
-
+      // User canceled the sign-in
       debugPrint('Google Sign-In: User selected - ${googleUser.email}');
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       
       debugPrint('Google Sign-In: Got authentication tokens');
 
-      // Create a new credential
+      // Create a new credential (new version only uses idToken)
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 

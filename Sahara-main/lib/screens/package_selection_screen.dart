@@ -98,7 +98,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
   /// Load packages once and cache them, sorted by price
   Future<void> _loadPackages() async {
     try {
+      debugPrint('📦 Loading packages for service: "${widget.serviceType}"');
       final packages = await _packageService.getPackagesForService(widget.serviceType);
+      debugPrint('✅ Loaded ${packages.length} packages');
+      
       // Sort packages by price in ascending order (lowest to highest)
       packages.sort((a, b) => a.price.compareTo(b.price));
       setState(() {
@@ -106,6 +109,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('❌ Error loading packages: $e');
       setState(() {
         _cachedPackages = [];
         _isLoading = false;
@@ -168,12 +172,29 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Please check back later',
-              style: TextStyle(
+            Text(
+              'No packages found for "${widget.serviceType}"',
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textTertiary,
                 fontFamily: 'Montserrat',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                });
+                _loadPackages();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],

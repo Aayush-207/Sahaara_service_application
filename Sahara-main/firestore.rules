@@ -10,23 +10,50 @@ service cloud.firestore {
     
     // Chat rooms - Allow authenticated users
     match /chat_rooms/{chatRoomId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false; // Don't allow deletion
       
       // Messages subcollection
       match /messages/{messageId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated();
+        allow delete: if isAuthenticated();
+      }
+    }
+
+    // Chats collection - Allow authenticated users
+    match /chats/{chatId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false; // Don't allow deletion
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated();
+        allow delete: if isAuthenticated();
       }
     }
 
     // Users collection
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if request.auth.uid == userId;
+      allow read: if true; // Public read for caregivers (so they can be browsed)
+      allow write: if isAuthenticated(); // Allow authenticated users to write (for seeding caregivers)
       
       // Pets subcollection
       match /pets/{petId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if isAuthenticated(); // Allow authenticated users for admin operations
       }
+    }
+
+    // Pets collection (top-level, if exists)
+    match /pets/{petId} {
+      allow read, write: if isAuthenticated();
     }
 
     // Bookings collection
@@ -40,10 +67,16 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // Service Packages collection - publicly readable, no writes
+    // Service Packages collection - publicly readable, authenticated users can write (for seeding)
     match /service_packages/{packageId} {
       allow read: if true; // Public read access for all users
-      allow write: if false; // No direct writes (managed by admin)
+      allow write: if isAuthenticated(); // Allow authenticated users to write (for seeding)
+    }
+
+    // Adoptable Pets collection - publicly readable, authenticated users can write (for seeding)
+    match /adoptable_pets/{petId} {
+      allow read: if true; // Public read access for all users
+      allow write: if isAuthenticated(); // Allow authenticated users to write (for seeding)
     }
 
     // Reviews collection
@@ -62,9 +95,14 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // Generic fallback - deny by default
+    // User favorites collection
+    match /user_favorites/{favoriteId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Generic fallback - allow authenticated users (for development/seeding)
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isAuthenticated();
     }
   }
 }

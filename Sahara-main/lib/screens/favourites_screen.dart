@@ -407,7 +407,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                           userId,
                           caregiver.uid,
                         );
-                        if (mounted) {
+                        if (mounted && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(

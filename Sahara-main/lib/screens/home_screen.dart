@@ -16,7 +16,6 @@ import 'search_results_screen.dart';
 import 'service_selection_screen.dart';
 import 'package_selection_screen.dart';
 import 'my_pets_screen.dart';
-import 'messages_coming_soon_screen.dart';
 import 'notifications_screen.dart';
 import 'tracking_screen.dart';
 import 'adopt_pet_screen.dart';
@@ -569,149 +568,6 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  /// Build location permission bottom sheet
-  Widget _buildLocationPermissionSheet() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-              margin: const EdgeInsets.only(bottom: 20),
-            ),
-            // Icon
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.location_on_rounded,
-                size: 36,
-                color: AppColors.accent,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Title
-            Text(
-              'Allow Location Access',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-                fontFamily: 'Montserrat',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            // Description
-            Text(
-              'We need your location to show nearby caregivers and provide personalized service recommendations.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.w400,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            // Allow button
-            Consumer<LocationProvider>(
-              builder: (context, locationProvider, _) {
-                return SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: locationProvider.isLoading
-                        ? null
-                        : () async {
-                            final success = await locationProvider.requestLocationPermission();
-                            if (mounted && success) {
-                              Navigator.pop(context);
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      disabledBackgroundColor: Colors.grey[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: locationProvider.isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white.withValues(alpha: 0.8),
-                              ),
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Allow Location Access',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              fontFamily: 'Montserrat',
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            // Dismiss button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-                child: const Text(
-                  'Not Now',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                    fontFamily: 'Montserrat',
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Load user's favorites
   void _loadFavorites() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -1216,7 +1072,7 @@ class _HomeTabState extends State<HomeTab> {
         '₹599',
       ),
       ServiceData(
-        'Training',
+        'Dog Training',
         Icons.school_rounded,
         'Train your pet effectively',
         '₹799',
@@ -1826,7 +1682,7 @@ class _HomeTabState extends State<HomeTab> {
           decoration: BoxDecoration(
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -1849,8 +1705,8 @@ class _HomeTabState extends State<HomeTab> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppColors.primary.withOpacity(0.75),
-                        AppColors.primary.withOpacity(0.85),
+                        AppColors.primary.withValues(alpha: 0.75),
+                        AppColors.primary.withValues(alpha: 0.85),
                       ],
                     ),
                   ),

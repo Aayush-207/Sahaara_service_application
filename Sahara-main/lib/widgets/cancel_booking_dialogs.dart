@@ -186,7 +186,7 @@ class CancelBookingDialogs {
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                       const SizedBox(height: 12),
 
                       // Other option with text box

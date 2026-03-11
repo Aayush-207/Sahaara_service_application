@@ -8,7 +8,7 @@ class SoundService {
   SoundService._internal();
 
   late final AudioPlayer _audioPlayer;
-  bool _soundEnabled = true;
+  bool _soundEnabled = false; // Temporarily disabled due to Android MediaPlayer issues
   bool _initialized = false;
 
   // Initialize and load sound preference

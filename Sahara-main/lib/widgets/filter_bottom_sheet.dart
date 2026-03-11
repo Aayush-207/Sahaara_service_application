@@ -21,7 +21,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     'Dog Walking',
     'Pet Sitting',
     'Grooming',
-    'Training',
+    'Dog Training',
     'Vet Visit',
     'Medication Administration',
     'Pet Transportation',

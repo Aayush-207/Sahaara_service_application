@@ -96,22 +96,25 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.star_rounded,
                       size: 16,
                       color: AppColors.error,
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Location & Notifications are required',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.error,
-                        fontFamily: 'Montserrat',
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: const Text(
+                        'Location & Notifications are required',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.error,
+                          fontFamily: 'Montserrat',
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
-import '../utils/firebase_seeder_india.dart';
+import 'package:provider/provider.dart';
+import '../utils/firebase_seeder_2026_india.dart';
 import '../theme/app_colors.dart';
+import '../providers/auth_provider.dart';
 
 /// Admin screen for seeding Firebase data
 /// 
 /// This screen provides a UI to seed initial data to Firebase Firestore.
 /// Use this once to populate your database with sample caregivers and packages.
 /// 
-/// Access: Add a button in your app to navigate here, or use a debug menu
+/// Features:
+/// - Clear all existing data
+/// - Seed fresh 2026 India research-based data
+/// - 15 caregivers across major Indian cities
+/// - 30 service packages with market-based pricing
+/// 
+/// Access: Profile → Admin Seed Screen
 class AdminSeedScreen extends StatefulWidget {
   const AdminSeedScreen({super.key});
 
@@ -16,12 +24,26 @@ class AdminSeedScreen extends StatefulWidget {
 }
 
 class _AdminSeedScreenState extends State<AdminSeedScreen> {
-  final FirebaseSeederIndia _seeder = FirebaseSeederIndia();
+  final FirebaseSeeder2026India _seeder = FirebaseSeeder2026India();
   bool _isSeeding = false;
-  String _status = 'Ready to seed data';
+  String _status = 'Ready to seed 2026 India data';
   final List<String> _logs = [];
 
   Future<void> _seedAllData() async {
+    // Get current user ID from AuthProvider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.currentUser?.uid;
+    
+    if (currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Please login first to seed bookings with your user ID'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
     setState(() {
       _isSeeding = true;
       _status = 'Seeding data...';
@@ -30,7 +52,25 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
 
     try {
       _addLog('🌱 Starting data seeding...');
-      await _seeder.seedAll();
+      _addLog('👤 Using current user ID: $currentUserId');
+      
+      // Seed caregivers, packages, and pets
+      await _seeder.seedCaregivers();
+      _addLog('✅ Caregivers seeded');
+      
+      await _seeder.seedServicePackages();
+      _addLog('✅ Service packages seeded');
+      
+      await _seeder.seedAdoptablePets();
+      _addLog('✅ Adoptable pets seeded');
+      
+      // Seed bookings with current user ID
+      await _seeder.seedSampleBookings(userId: currentUserId);
+      _addLog('✅ Sample bookings seeded with your user ID');
+      
+      await _seeder.seedSampleReviews();
+      _addLog('✅ Sample reviews seeded');
+      
       _addLog('✅ Data seeding completed successfully!');
       
       setState(() {
@@ -41,7 +81,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Data seeded successfully!'),
+            content: Text('✅ Data seeded successfully with your user ID!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -389,10 +429,14 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        '• 16 Elite caregiver profiles across 7 major Indian cities\n'
-                        '• 21 Service packages (Dog Walking, Pet Sitting, Grooming, Training, Vet Visit)\n'
-                        '• Market-researched pricing (₹150-2,500)\n'
-                        '• Professional credentials & certifications',
+                        '• 15 Elite caregiver profiles across 6 major Indian cities\n'
+                        '• 30 Service packages (Dog Walking, Pet Sitting, Grooming, Training, Vet Visit)\n'
+                        '• 10 Adoptable pets for adoption feature\n'
+                        '• 15 Sample bookings (2 active, 8 upcoming, 5 pending) - using YOUR user ID\n'
+                        '• 25 Sample reviews for caregivers\n'
+                        '• Market-researched pricing (₹200-₹12,000)\n'
+                        '• Professional credentials & certifications\n\n'
+                        '⚠️ Important: Login first so bookings use your user ID!',
                         style: TextStyle(fontSize: 13),
                       ),
                     ],

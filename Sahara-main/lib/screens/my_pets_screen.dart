@@ -56,7 +56,6 @@ class _MyPetsScreenState extends State<MyPetsScreen> {
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        automaticallyImplyLeading: false,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),

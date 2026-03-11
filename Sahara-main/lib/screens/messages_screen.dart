@@ -17,10 +17,35 @@ import 'package:intl/intl.dart';
 /// - Real-time message updates
 /// - Profile pictures with fallback
 /// - Smart time formatting
-/// - Swipe actions (future)
-/// - Search functionality (future)
-class MessagesScreen extends StatelessWidget {
+/// - Search functionality
+/// - Menu options
+class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
+
+  @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends State<MessagesScreen> {
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchController.clear();
+        _searchQuery = '';
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +78,12 @@ class MessagesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(context),
-      body: _buildMessagesList(currentUser.uid),
+      body: Column(
+        children: [
+          if (_isSearching) _buildSearchBar(),
+          Expanded(child: _buildMessagesList(currentUser.uid)),
+        ],
+      ),
     );
   }
 
@@ -76,16 +106,50 @@ class MessagesScreen extends StatelessWidget {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.search_rounded, color: AppColors.textPrimary),
-          onPressed: () {
-            // TODO: Implement search
-          },
+          icon: Icon(
+            _isSearching ? Icons.close_rounded : Icons.search_rounded,
+            color: AppColors.textPrimary,
+          ),
+          onPressed: _toggleSearch,
         ),
-        IconButton(
+        PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert_rounded, color: AppColors.textPrimary),
-          onPressed: () {
-            // TODO: Show menu
+          onSelected: (value) {
+            switch (value) {
+              case 'mark_all_read':
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('All messages marked as read')),
+                );
+                break;
+              case 'archived':
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Archived chats coming soon')),
+                );
+                break;
+            }
           },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'mark_all_read',
+              child: Row(
+                children: [
+                  Icon(Icons.done_all_rounded, size: 20),
+                  SizedBox(width: 12),
+                  Text('Mark all as read'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'archived',
+              child: Row(
+                children: [
+                  Icon(Icons.archive_outlined, size: 20),
+                  SizedBox(width: 12),
+                  Text('Archived chats'),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
       bottom: PreferredSize(
@@ -94,6 +158,48 @@ class MessagesScreen extends StatelessWidget {
           height: 1,
           color: AppColors.border,
         ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.white,
+      child: TextField(
+        controller: _searchController,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'Search conversations...',
+          hintStyle: TextStyle(
+            color: Colors.grey[400],
+            fontFamily: 'Montserrat',
+          ),
+          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear_rounded, size: 20),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.background,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value.toLowerCase();
+          });
+        },
       ),
     );
   }
@@ -114,10 +220,22 @@ class MessagesScreen extends StatelessWidget {
           return _buildErrorState();
         }
 
-        final chats = snapshot.data ?? [];
+        var chats = snapshot.data ?? [];
+
+        // Filter chats based on search query
+        if (_searchQuery.isNotEmpty) {
+          chats = chats.where((chat) {
+            final otherUserName = chat.getOtherUserName(userId).toLowerCase();
+            final lastMessage = chat.lastMessage.toLowerCase();
+            return otherUserName.contains(_searchQuery) || 
+                   lastMessage.contains(_searchQuery);
+          }).toList();
+        }
 
         if (chats.isEmpty) {
-          return _buildEmptyState();
+          return _searchQuery.isNotEmpty 
+              ? _buildNoSearchResults()
+              : _buildEmptyState();
         }
 
         return ListView.separated(
@@ -131,6 +249,40 @@ class MessagesScreen extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _buildNoSearchResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 64,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No results found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try searching with different keywords',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        ],
+      ),
     );
   }
 

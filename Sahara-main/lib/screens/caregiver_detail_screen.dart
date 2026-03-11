@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../models/review_model.dart';
 import '../models/service_package_model.dart';
-import '../services/firestore_service.dart';
 import '../services/sound_service.dart';
 import '../services/package_service.dart';
 import '../providers/auth_provider.dart';
@@ -56,7 +55,6 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> {
   // STATE VARIABLES
   // ============================================================================
 
-  final FirestoreService _firestoreService = FirestoreService();
   final SoundService _soundService = SoundService();
   List<ReviewModel> _reviews = [];
   bool _isLoadingReviews = true;
@@ -162,18 +160,6 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> {
   // ACTION HANDLERS
   // ============================================================================
 
-  /// Handles favorite button press
-  void _handleFavorite() {
-    _soundService.playTap();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Added to favorites!'),
-        backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   /// Handles share button press
   void _handleShare() {
     _soundService.playTap();
@@ -248,10 +234,6 @@ class _CaregiverDetailScreenState extends State<CaregiverDetailScreen> {
         },
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.favorite_border, color: Colors.white),
-          onPressed: _handleFavorite,
-        ),
         IconButton(
           icon: const Icon(Icons.share, color: Colors.white),
           onPressed: _handleShare,

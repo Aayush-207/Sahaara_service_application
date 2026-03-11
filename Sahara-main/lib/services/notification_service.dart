@@ -53,8 +53,8 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      settings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
+      settings: settings,
     );
   }
 
@@ -120,10 +120,10 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      DateTime.now().millisecond,
-      title,
-      body,
-      details,
+      id: DateTime.now().millisecond,
+      title: title,
+      body: body,
+      notificationDetails: details,
       payload: payload,
     );
   }

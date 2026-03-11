@@ -15,5 +15,8 @@ void main() {
 
     // Verify that splash screen shows
     expect(find.text('Sahara'), findsOneWidget);
+    
+    // Pump and settle to complete all animations and timers
+    await tester.pumpAndSettle(const Duration(seconds: 5));
   });
 }

@@ -165,6 +165,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Future<void> _handleGoogleSignIn() async {
     await _soundService.playClick();
+    if (!mounted) return;
+    
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final navigator = Navigator.of(context);
     

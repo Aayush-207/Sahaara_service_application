@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message_model.dart';
 import '../services/firestore_service.dart';
@@ -887,7 +886,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   );
                   _soundService.playSuccess();
                   _messageController.clear();
-                  if (mounted) Navigator.pop(context);
+                  if (mounted && context.mounted) Navigator.pop(context);
                 } catch (e) {
                   _soundService.playError();
                   debugPrint('Error updating message: $e');
@@ -936,7 +935,7 @@ class _ChatScreenState extends State<ChatScreen> {
               try {
                 await _firestoreService.deleteMessage(_actualChatRoomId, messageId);
                 _soundService.playSuccess();
-                if (mounted) Navigator.pop(context);
+                if (mounted && context.mounted) Navigator.pop(context);
               } catch (e) {
                 _soundService.playError();
                 debugPrint('Error deleting message: $e');

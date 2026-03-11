@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../config/app_config.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -101,9 +102,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               title: '8. Contact Us',
               content: 'If you have questions about this privacy policy, please contact us:\n\n'
-                  'Email: privacy@sahara.com\n'
-                  'Phone: +91 98765 43210\n'
-                  'Address: 123 Pet Care Street, Bengaluru, Karnataka 560001, India',
+                  'Email: ${AppConfig.privacyEmail}\n'
+                  'Phone: ${AppConfig.supportPhone}\n'
+                  'Address: ${AppConfig.companyAddress}',
             ),
             const SizedBox(height: 28),
             Container(

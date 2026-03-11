@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
+import '../config/app_config.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
@@ -29,17 +30,17 @@ class HelpSupportScreen extends StatelessWidget {
             _buildContactCard(
               icon: Icons.email_outlined,
               title: 'Email Us',
-              subtitle: 'notaayush1213@gmail.com',
+              subtitle: AppConfig.supportEmail,
               gradient: AppColors.primaryGradient,
-              onTap: () => _launchEmail('notaayush1213@gmail.com'),
+              onTap: () => _launchEmail(AppConfig.supportEmail),
             ),
             const SizedBox(height: 10),
             _buildContactCard(
               icon: Icons.phone_outlined,
               title: 'Call Us',
-              subtitle: '+91 98765 43210',
+              subtitle: AppConfig.supportPhone,
               gradient: AppColors.secondaryGradient,
-              onTap: () => _launchPhone('+919876543210'),
+              onTap: () => _launchPhone(AppConfig.supportPhone.replaceAll(' ', '')),
             ),
             const SizedBox(height: 10),
             _buildContactCard(

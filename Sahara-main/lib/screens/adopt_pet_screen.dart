@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 
 /// Adopt Pet Screen - Browse and adopt pets
@@ -10,77 +11,15 @@ import '../theme/app_colors.dart';
 /// - View more details button
 /// - Enquire for adoption button
 class AdoptPetScreen extends StatefulWidget {
-  const AdoptPetScreen({Key? key}) : super(key: key);
+  const AdoptPetScreen({super.key});
 
   @override
   State<AdoptPetScreen> createState() => _AdoptPetScreenState();
 }
 
 class _AdoptPetScreenState extends State<AdoptPetScreen> {
-  // Sample adoptable pets with image URLs
-  final List<AdoptablePet> adoptablePets = [
-    AdoptablePet(
-      id: '1',
-      name: 'Luna',
-      type: 'Dog',
-      breed: 'Golden Retriever',
-      age: 2,
-      image: 'https://images.unsplash.com/photo-1670226882887-f1a9f9d22fb1?w=500&h=500&fit=crop',
-      description: 'Luna is a friendly and energetic Golden Retriever who loves playing fetch and going on long walks. She\'s great with children and other pets.',
-      adoptionFee: 200,
-    ),
-    AdoptablePet(
-      id: '2',
-      name: 'Max',
-      type: 'Dog',
-      breed: 'German Shepherd',
-      age: 3,
-      image: 'https://images.unsplash.com/photo-1568572933382-74d440642117?w=500&h=500&fit=crop',
-      description: 'Max is a loyal and protective German Shepherd. He\'s well-trained, obedient, and makes an excellent family companion.',
-      adoptionFee: 250,
-    ),
-    AdoptablePet(
-      id: '3',
-      name: 'Bella',
-      type: 'Dog',
-      breed: 'Beagle',
-      age: 1,
-      image: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?w=500&h=500&fit=crop',
-      description: 'Bella is an adorable young Beagle full of energy and curiosity. She\'s playful, social, and loves being around people.',
-      adoptionFee: 150,
-    ),
-    AdoptablePet(
-      id: '4',
-      name: 'Charlie',
-      type: 'Dog',
-      breed: 'Labrador',
-      age: 4,
-      image: 'https://images.unsplash.com/photo-1587300003388-59208ccbafca?w=500&h=500&fit=crop',
-      description: 'Charlie is a calm and gentle Labrador who loves cuddles and short walks. Perfect for families with young children.',
-      adoptionFee: 200,
-    ),
-    AdoptablePet(
-      id: '5',
-      name: 'Daisy',
-      type: 'Cat',
-      breed: 'Persian',
-      age: 2,
-      image: 'https://images.unsplash.com/photo-1574144611937-0df059b5ef3e?w=500&h=500&fit=crop',
-      description: 'Daisy is a beautiful Persian cat who enjoys indoor living. She\'s affectionate and loves being petted.',
-      adoptionFee: 100,
-    ),
-    AdoptablePet(
-      id: '6',
-      name: 'Tiger',
-      type: 'Cat',
-      breed: 'Bengal',
-      age: 1,
-      image: 'https://images.unsplash.com/photo-1606214174585-fe31582dc1d7?w=500&h=500&fit=crop',
-      description: 'Tiger is an energetic Bengal cat with beautiful markings. He\'s playful and loves interactive toys.',
-      adoptionFee: 120,
-    ),
-  ];
-
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,35 +41,75 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-            child: Text(
-              '${adoptablePets.length} pets available for adoption',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-                fontFamily: 'Montserrat',
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore.collection('adoptable_pets').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Error: ${snapshot.error}'),
+            );
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          final pets = snapshot.data?.docs ?? [];
+
+          if (pets.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.pets, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No pets available for adoption',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 1,
-                childAspectRatio: 0.99,
-                mainAxisSpacing: 16,
+            );
+          }
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Text(
+                  '${pets.length} pets available for adoption',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
               ),
-              itemCount: adoptablePets.length,
-              itemBuilder: (context, index) {
-                return _buildPetCard(context, adoptablePets[index]);
-              },
-            ),
-          ),
-        ],
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 1,
+                    childAspectRatio: 0.99,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: pets.length,
+                  itemBuilder: (context, index) {
+                    final petData = pets[index].data() as Map<String, dynamic>;
+                    final pet = AdoptablePet.fromMap(petData);
+                    return _buildPetCard(context, pet);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -145,7 +124,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -342,7 +321,7 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary.withOpacity(0.1),
+                            color: AppColors.secondary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -395,10 +374,10 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.secondary.withOpacity(0.05),
+                        color: AppColors.secondary.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: AppColors.secondary.withOpacity(0.2),
+                          color: AppColors.secondary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -571,6 +550,10 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
                   duration: const Duration(seconds: 3),
                 ),
               );
+              // Dispose controllers before closing
+              nameController.dispose();
+              emailController.dispose();
+              phoneController.dispose();
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -587,7 +570,12 @@ class _AdoptPetScreenState extends State<AdoptPetScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      // Dispose controllers if dialog is dismissed without submitting
+      nameController.dispose();
+      emailController.dispose();
+      phoneController.dispose();
+    });
   }
 }
 
@@ -612,4 +600,17 @@ class AdoptablePet {
     required this.description,
     required this.adoptionFee,
   });
+
+  factory AdoptablePet.fromMap(Map<String, dynamic> map) {
+    return AdoptablePet(
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      type: map['type'] ?? '',
+      breed: map['breed'] ?? '',
+      age: map['age'] ?? 0,
+      image: map['image'] ?? '',
+      description: map['description'] ?? '',
+      adoptionFee: map['adoptionFee'] ?? 0,
+    );
+  }
 }

@@ -62,7 +62,14 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
+    
+    // Add listener to debug tab changes
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        debugPrint('📑 Tab changed to index: ${_tabController.index}');
+      }
+    });
   }
 
   @override
@@ -118,6 +125,7 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
               child: TabBarView(
                 controller: _tabController,
                 children: [
+                  _buildBookingsList(userId, 'active'),
                   _buildBookingsList(userId, 'upcoming'),
                   _buildBookingsList(userId, 'completed'),
                   _buildBookingsList(userId, 'cancelled'),
@@ -197,21 +205,25 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
         labelColor: Colors.white,
         unselectedLabelColor: AppColors.textSecondary,
         labelStyle: const TextStyle(
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
           fontFamily: 'Montserrat',
         ),
         unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
           fontFamily: 'Montserrat',
         ),
+        isScrollable: false,
+        tabAlignment: TabAlignment.fill,
         onTap: (index) {
+          debugPrint('🔘 Tab tapped: $index');
           _soundService.playTap();
         },
         tabs: const [
+          Tab(text: 'Active'),
           Tab(text: 'Upcoming'),
-          Tab(text: 'Completed'),
+          Tab(text: 'Past'),
           Tab(text: 'Cancelled'),
         ],
       ),
@@ -242,7 +254,9 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
 
         final allBookings = snapshot.data ?? [];
         final filteredBookings = allBookings.where((booking) {
-          if (status == 'upcoming') {
+          if (status == 'active') {
+            return booking.status == 'in_progress';
+          } else if (status == 'upcoming') {
             return booking.status == 'pending' || booking.status == 'confirmed';
           } else if (status == 'completed') {
             return booking.status == 'completed';
@@ -250,12 +264,6 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
             return booking.status == 'cancelled';
           }
         }).toList();
-
-        // Add default completed booking to completed section
-        if (status == 'completed') {
-          final defaultBooking = _createDefaultCompletedBooking();
-          filteredBookings.add(defaultBooking);
-        }
 
         if (filteredBookings.isEmpty) {
           return _buildEmptyState(status);
@@ -397,6 +405,11 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
     IconData icon;
     
     switch (status) {
+      case 'active':
+        message = 'No active bookings';
+        submessage = 'Your ongoing services will appear here';
+        icon = Icons.play_circle_outline_rounded;
+        break;
       case 'upcoming':
         message = 'No upcoming bookings';
         submessage = 'Book a caregiver to get started';
@@ -495,29 +508,6 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
           ),
         ],
       ),
-    );
-  }
-
-  // ============================================================================
-  // DEFAULT BOOKING HELPER
-  // ============================================================================
-
-  /// Creates a default completed booking for demonstration
-  BookingModel _createDefaultCompletedBooking() {
-    return BookingModel(
-      id: 'default_booking_001',
-      ownerId: '', // Will be populated by userId context
-      caregiverId: 'caregiver_priya_sharma', // Use first caregiver from seed data
-      petId: 'default_pet_max', // Sample pet ID
-      serviceType: 'Dog Walking',
-      packageName: 'Premium Trail Walk',
-      scheduledDate: DateTime.now().subtract(const Duration(days: 7)),
-      status: 'completed',
-      price: 500.0,
-      duration: '60 minutes',
-      notes: 'Great walk! Max enjoyed the trail.',
-      createdAt: DateTime.now().subtract(const Duration(days: 8)),
-      cancellationReason: null,
     );
   }
 }

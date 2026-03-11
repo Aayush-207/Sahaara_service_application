@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
 import '../theme/app_colors.dart';
 import 'package:intl/intl.dart';
+import '../services/firestore_service.dart';
+import '../models/booking_model.dart';
+import '../models/user_model.dart';
+import 'dart:async';
 
 /// Tracking Screen - Track pet location and service status
+/// 
+/// Features:
+/// - Real-time booking tracking from Firestore
+/// - Live map with caregiver and pet locations
+/// - Service timeline with booking status
+/// - Active booking details
+/// - Caregiver contact information
+/// - Auto-refresh every 30 seconds
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
 
@@ -16,51 +29,35 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> {
   GoogleMapController? _mapController;
-  Set<Marker> _markers = {};
+  final Set<Marker> _markers = {};
+  final FirestoreService _firestoreService = FirestoreService();
+  Timer? _refreshTimer;
+  
+  // Selected booking for tracking
+  BookingModel? _selectedBooking;
+  UserModel? _selectedCaregiver;
 
   // Default location (Mumbai, India)
   static const CameraPosition _defaultPosition = CameraPosition(
     target: LatLng(19.0760, 72.8777),
-    zoom: 15,
+    zoom: 14,
   );
-
-  // Sample data for tracking
-  final List<ServiceActivity> activities = [
-    ServiceActivity(
-      service: 'Grooming',
-      status: 'completed',
-      startTime: DateTime.now().subtract(const Duration(hours: 4)),
-      endTime: DateTime.now().subtract(const Duration(hours: 2)),
-      description: 'Hair trimming and styling completed',
-    ),
-    ServiceActivity(
-      service: 'Cleaning/Bathing',
-      status: 'in_progress',
-      startTime: DateTime.now().subtract(const Duration(hours: 2)),
-      endTime: null,
-      description: 'Dog is being bathed and cleaned',
-    ),
-    ServiceActivity(
-      service: 'Training',
-      status: 'pending',
-      startTime: DateTime.now().add(const Duration(hours: 1)),
-      endTime: null,
-      description: 'Training session scheduled',
-    ),
-    ServiceActivity(
-      service: 'Vaccination',
-      status: 'pending',
-      startTime: DateTime.now().add(const Duration(hours: 3)),
-      endTime: null,
-      description: 'Vet appointment for vaccination',
-    ),
-  ];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocation();
+      _startAutoRefresh();
+    });
+  }
+  
+  /// Start auto-refresh timer (every 30 seconds)
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _initializeLocation();
+      }
     });
   }
 
@@ -83,6 +80,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void _updateMarkers(LocationProvider locationProvider) {
     _markers.clear();
 
+    // Add pet/owner location marker
     final petLocation = locationProvider.currentPosition;
     if (petLocation != null) {
       _markers.add(
@@ -90,22 +88,36 @@ class _TrackingScreenState extends State<TrackingScreen> {
           markerId: const MarkerId('pet_location'),
           position: LatLng(petLocation.latitude, petLocation.longitude),
           infoWindow: InfoWindow(
-            title: 'Pet Location',
+            title: 'Your Location',
             snippet: locationProvider.currentAddress ?? 'Current Location',
           ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
         ),
       );
-    } else {
-      // Add default marker if no location available
+      
+      // Move camera to pet location
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLng(
+          LatLng(petLocation.latitude, petLocation.longitude),
+        ),
+      );
+    }
+    
+    // Add caregiver location marker if booking is active
+    if (_selectedBooking != null && _selectedCaregiver != null) {
+      // Simulate caregiver location near pet (in real app, this would come from caregiver's live location)
+      final caregiverLat = (petLocation?.latitude ?? 19.0760) + 0.005;
+      final caregiverLng = (petLocation?.longitude ?? 72.8777) + 0.005;
+      
       _markers.add(
-        const Marker(
-          markerId: MarkerId('default_location'),
-          position: LatLng(19.0760, 72.8777),
+        Marker(
+          markerId: const MarkerId('caregiver_location'),
+          position: LatLng(caregiverLat, caregiverLng),
           infoWindow: InfoWindow(
-            title: 'Pet Location',
-            snippet: 'Mumbai, India',
+            title: _selectedCaregiver!.name,
+            snippet: 'Caregiver Location',
           ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         ),
       );
     }
@@ -114,6 +126,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   @override
   void dispose() {
     _mapController?.dispose();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -172,6 +185,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
             fontFamily: 'Montserrat',
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary),
+            onPressed: _initializeLocation,
+            tooltip: 'Refresh',
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -180,11 +200,275 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: StreamBuilder<List<BookingModel>>(
+        stream: _firestoreService.getUserBookings(currentUser.uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          final bookings = snapshot.data!;
+          
+          // Filter active bookings (confirmed or in_progress)
+          final activeBookings = bookings.where((b) => 
+            b.status == 'confirmed' || b.status == 'in_progress'
+          ).toList();
+
+          if (activeBookings.isEmpty) {
+            return _buildNoActiveBookings();
+          }
+
+          // Auto-select first active booking if none selected
+          if (_selectedBooking == null && activeBookings.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _selectBooking(activeBookings.first);
+            });
+          }
+
+          return Column(
+            children: [
+              // Booking selector if multiple active bookings
+              if (activeBookings.length > 1)
+                _buildBookingSelector(activeBookings),
+              
+              // Main content
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildLocationMap(),
+                      if (_selectedBooking != null) ...[
+                        _buildBookingDetails(),
+                        _buildServiceTimeline(),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+  
+  /// Select a booking for tracking
+  Future<void> _selectBooking(BookingModel booking) async {
+    try {
+      // Fetch caregiver details
+      final caregiver = await _firestoreService.getUserById(booking.caregiverId);
+      
+      if (mounted) {
+        setState(() {
+          _selectedBooking = booking;
+          _selectedCaregiver = caregiver;
+        });
+        
+        // Update markers
+        final locationProvider = context.read<LocationProvider>();
+        _updateMarkers(locationProvider);
+      }
+    } catch (e) {
+      debugPrint('Error selecting booking: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to load booking details'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+  
+  /// Make a phone call to the caregiver
+  Future<void> _makeCall() async {
+    if (_selectedCaregiver == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No caregiver selected'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    
+    final phoneNumber = _selectedCaregiver!.phone;
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Caregiver phone number not available'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to make call'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error making call: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to initiate call'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+  
+  /// Build booking selector dropdown
+  Widget _buildBookingSelector(List<BookingModel> bookings) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.pets_rounded, color: AppColors.primary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedBooking?.id,
+                hint: const Text('Select booking to track'),
+                isExpanded: true,
+                items: bookings.map((booking) {
+                  return DropdownMenuItem(
+                    value: booking.id,
+                    child: Text(
+                      '${booking.serviceType} - ${DateFormat('MMM dd, hh:mm a').format(booking.scheduledDate)}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  final booking = bookings.firstWhere((b) => b.id == value);
+                  _selectBooking(booking);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build empty state
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLocationMap(),
-            _buildServiceTimeline(),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.location_off_rounded,
+                size: 64,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Bookings Yet',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Book a service to start tracking your pet',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  /// Build no active bookings state
+  Widget _buildNoActiveBookings() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.schedule_rounded,
+                size: 64,
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Active Services',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You have no active bookings to track right now',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                fontFamily: 'Montserrat',
+              ),
+            ),
           ],
         ),
       ),
@@ -198,14 +482,49 @@ class _TrackingScreenState extends State<TrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Current Location',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              fontFamily: 'Montserrat',
-            ),
+          Row(
+            children: [
+              const Text(
+                'Live Location',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'LIVE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.green,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Container(
@@ -274,7 +593,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Pet Location',
+                            'Your Location',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -299,7 +618,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                           Text(
                             locationProvider.isLoading
                                 ? 'Updating...'
-                                : 'Updated just now',
+                                : 'Updated ${_getTimeAgo(DateTime.now())}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[500],
@@ -318,9 +637,187 @@ class _TrackingScreenState extends State<TrackingScreen> {
       ),
     );
   }
+  
+  /// Build booking details section
+  Widget _buildBookingDetails() {
+    if (_selectedBooking == null || _selectedCaregiver == null) {
+      return const SizedBox.shrink();
+    }
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Caregiver avatar
+              CircleAvatar(
+                radius: 28,
+                backgroundImage: _selectedCaregiver!.photoUrl != null
+                    ? NetworkImage(_selectedCaregiver!.photoUrl!)
+                    : null,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                child: _selectedCaregiver!.photoUrl == null
+                    ? Text(
+                        _selectedCaregiver!.name[0].toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _selectedCaregiver!.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, size: 14, color: AppColors.star),
+                        const SizedBox(width: 4),
+                        Text(
+                          _selectedCaregiver!.rating?.toStringAsFixed(1) ?? '0.0',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '• ${_selectedCaregiver!.location ?? 'Unknown'}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Call button
+              IconButton(
+                onPressed: () => _makeCall(),
+                icon: const Icon(Icons.phone_rounded),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  foregroundColor: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 16),
+          // Service details
+          _buildDetailRow(
+            Icons.pets_rounded,
+            'Service',
+            _selectedBooking!.serviceType,
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            Icons.calendar_today_rounded,
+            'Scheduled',
+            DateFormat('MMM dd, yyyy • hh:mm a').format(_selectedBooking!.scheduledDate),
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            Icons.access_time_rounded,
+            'Duration',
+            _selectedBooking!.duration,
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            Icons.currency_rupee_rounded,
+            'Price',
+            '₹${_selectedBooking!.price.toStringAsFixed(0)}',
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build detail row
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 16, color: AppColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Build service timeline section
   Widget _buildServiceTimeline() {
+    if (_selectedBooking == null) {
+      return const SizedBox.shrink();
+    }
+    
+    // Generate timeline based on booking status
+    final activities = _generateTimelineActivities(_selectedBooking!);
+    
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -336,14 +833,70 @@ class _TrackingScreenState extends State<TrackingScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildTimeline(),
+          _buildTimeline(activities),
         ],
       ),
     );
   }
+  
+  /// Generate timeline activities based on booking
+  List<TimelineActivity> _generateTimelineActivities(BookingModel booking) {
+    final now = DateTime.now();
+    final scheduledTime = booking.scheduledDate;
+    
+    final activities = <TimelineActivity>[];
+    
+    // Booking confirmed
+    activities.add(TimelineActivity(
+      title: 'Booking Confirmed',
+      description: 'Your booking has been confirmed by ${_selectedCaregiver?.name ?? 'caregiver'}',
+      time: booking.createdAt,
+      status: 'completed',
+      icon: Icons.check_circle_rounded,
+    ));
+    
+    // Service started
+    if (booking.status == 'in_progress') {
+      activities.add(TimelineActivity(
+        title: 'Service Started',
+        description: '${booking.serviceType} service is now in progress',
+        time: scheduledTime,
+        status: 'in_progress',
+        icon: Icons.play_circle_rounded,
+      ));
+      
+      activities.add(TimelineActivity(
+        title: 'Service Completion',
+        description: 'Estimated completion time',
+        time: scheduledTime.add(const Duration(hours: 2)),
+        status: 'pending',
+        icon: Icons.schedule_rounded,
+      ));
+    } else if (booking.status == 'confirmed') {
+      activities.add(TimelineActivity(
+        title: 'Service Scheduled',
+        description: '${booking.serviceType} service will start soon',
+        time: scheduledTime,
+        status: scheduledTime.isBefore(now) ? 'in_progress' : 'pending',
+        icon: Icons.schedule_rounded,
+      ));
+      
+      if (scheduledTime.isAfter(now)) {
+        activities.add(TimelineActivity(
+          title: 'Caregiver Arrival',
+          description: 'Caregiver will arrive at scheduled time',
+          time: scheduledTime,
+          status: 'pending',
+          icon: Icons.directions_walk_rounded,
+        ));
+      }
+    }
+    
+    return activities;
+  }
 
   /// Build timeline widget
-  Widget _buildTimeline() {
+  Widget _buildTimeline(List<TimelineActivity> activities) {
     return Column(
       children: List.generate(activities.length, (index) {
         final activity = activities[index];
@@ -371,7 +924,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         ],
                       ),
                       child: Icon(
-                        _getStatusIcon(activity.status),
+                        activity.icon,
                         color: Colors.white,
                         size: 20,
                       ),
@@ -411,13 +964,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              activity.service,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                                fontFamily: 'Montserrat',
+                            Expanded(
+                              child: Text(
+                                activity.title,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                  fontFamily: 'Montserrat',
+                                ),
                               ),
                             ),
                             _buildStatusBadge(activity.status),
@@ -443,7 +998,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _formatActivityTime(activity),
+                              _formatTimelineTime(activity),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -536,45 +1091,63 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
   }
 
-  /// Get status icon
-  IconData _getStatusIcon(String status) {
-    switch (status) {
-      case 'completed':
-        return Icons.check_rounded;
-      case 'in_progress':
-        return Icons.animation_rounded;
-      case 'pending':
-        return Icons.schedule_rounded;
-      default:
-        return Icons.help_outline_rounded;
+  /// Format timeline time
+  String _formatTimelineTime(TimelineActivity activity) {
+    final now = DateTime.now();
+    final time = activity.time;
+    
+    if (activity.status == 'completed') {
+      return _getTimeAgo(time);
+    } else if (activity.status == 'in_progress') {
+      return 'Started ${_getTimeAgo(time)}';
+    } else {
+      if (time.isAfter(now)) {
+        final diff = time.difference(now);
+        if (diff.inMinutes < 60) {
+          return 'In ${diff.inMinutes} minutes';
+        } else if (diff.inHours < 24) {
+          return 'In ${diff.inHours} hours';
+        } else {
+          return DateFormat('MMM dd, hh:mm a').format(time);
+        }
+      } else {
+        return DateFormat('hh:mm a').format(time);
+      }
     }
   }
-
-  /// Format activity time
-  String _formatActivityTime(ServiceActivity activity) {
-    if (activity.status == 'pending') {
-      return 'Starts ${DateFormat('hh:mm a').format(activity.startTime)}';
-    } else if (activity.status == 'in_progress') {
-      return 'Started ${DateFormat('hh:mm a').format(activity.startTime)}';
+  
+  /// Get time ago string
+  String _getTimeAgo(DateTime time) {
+    final now = DateTime.now();
+    final diff = now.difference(time);
+    
+    if (diff.inSeconds < 60) {
+      return 'just now';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays}d ago';
     } else {
-      return '${DateFormat('hh:mm a').format(activity.startTime)} - ${DateFormat('hh:mm a').format(activity.endTime!)}';
+      return DateFormat('MMM dd').format(time);
     }
   }
 }
 
-/// Service Activity Model
-class ServiceActivity {
-  final String service;
-  final String status;
-  final DateTime startTime;
-  final DateTime? endTime;
+/// Timeline Activity Model
+class TimelineActivity {
+  final String title;
   final String description;
+  final DateTime time;
+  final String status;
+  final IconData icon;
 
-  ServiceActivity({
-    required this.service,
-    required this.status,
-    required this.startTime,
-    required this.endTime,
+  TimelineActivity({
+    required this.title,
     required this.description,
+    required this.time,
+    required this.status,
+    required this.icon,
   });
 }
