@@ -226,20 +226,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
             );
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          final bookings = snapshot.data!;
+          final bookings = snapshot.data ?? [];
           
           // Filter active bookings (confirmed or in_progress)
           final activeBookings = bookings.where((b) => 
             b.status == 'confirmed' || b.status == 'in_progress'
           ).toList();
 
-          if (activeBookings.isEmpty) {
-            return _buildNoActiveBookings();
-          }
+          // Inject dummy active booking so tracking always has something to show
+          activeBookings.insert(0, _dummyActiveBooking);
 
           // Auto-select first active booking if none selected
           if (_selectedBooking == null && activeBookings.isNotEmpty) {
@@ -275,11 +270,55 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
   
+  /// Dummy caregiver for demo tracking
+  UserModel get _dummyCaregiver => UserModel(
+    uid: 'dummy_caregiver_001',
+    email: 'priya.sharma@sahara.com',
+    name: 'Priya Sharma',
+    userType: 'caregiver',
+    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=face',
+    phone: '+91 98765 43210',
+    rating: 4.8,
+    completedBookings: 127,
+    createdAt: DateTime(2024, 6, 15),
+    bio: 'Certified pet care specialist with 5+ years of experience.',
+    location: 'Bengaluru, Karnataka',
+    services: ['Dog Walking', 'Pet Sitting', 'Grooming'],
+    yearsOfExperience: 5,
+    isVerified: true,
+    isAvailable: true,
+  );
+
+  /// Dummy active booking (today, in progress)
+  BookingModel get _dummyActiveBooking {
+    final now = DateTime.now();
+    return BookingModel(
+      id: 'dummy_active_001',
+      ownerId: 'current_user',
+      caregiverId: 'dummy_caregiver_001',
+      petId: 'dummy_pet_001',
+      serviceType: 'Dog Walking',
+      packageName: 'Premium Walk - 60 min',
+      duration: '1 hour',
+      scheduledDate: DateTime(now.year, now.month, now.day, now.hour, 0),
+      status: 'in_progress',
+      price: 499,
+      notes: 'Please use the harness instead of collar. He pulls a lot!',
+      createdAt: now.subtract(const Duration(hours: 2)),
+      actualStartTime: now.subtract(const Duration(minutes: 30)),
+    );
+  }
+
   /// Select a booking for tracking
   Future<void> _selectBooking(BookingModel booking) async {
     try {
-      // Fetch caregiver details
-      final caregiver = await _firestoreService.getUserById(booking.caregiverId);
+      // Use dummy caregiver for dummy bookings, otherwise fetch from Firestore
+      UserModel? caregiver;
+      if (booking.id == 'dummy_active_001') {
+        caregiver = _dummyCaregiver;
+      } else {
+        caregiver = await _firestoreService.getUserById(booking.caregiverId);
+      }
       
       if (mounted) {
         setState(() {

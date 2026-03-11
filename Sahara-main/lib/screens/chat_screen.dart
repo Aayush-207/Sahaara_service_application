@@ -832,6 +832,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   maxLines: 5,
                   minLines: 1,
                   textCapitalization: TextCapitalization.sentences,
+                  onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),

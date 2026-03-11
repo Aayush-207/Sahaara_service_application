@@ -234,6 +234,71 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   // UI BUILDERS - BOOKINGS LIST
   // ============================================================================
 
+  // ============================================================================
+  // DUMMY DATA
+  // ============================================================================
+
+  /// Dummy caregiver for demo cards
+  UserModel get _dummyCaregiver => UserModel(
+    uid: 'dummy_caregiver_001',
+    email: 'priya.sharma@sahara.com',
+    name: 'Priya Sharma',
+    userType: 'caregiver',
+    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=face',
+    phone: '+91 98765 43210',
+    rating: 4.8,
+    completedBookings: 127,
+    createdAt: DateTime(2024, 6, 15),
+    bio: 'Certified pet care specialist with 5+ years of experience.',
+    location: 'Bengaluru, Karnataka',
+    services: ['Dog Walking', 'Pet Sitting', 'Grooming'],
+    yearsOfExperience: 5,
+    isVerified: true,
+    isAvailable: true,
+  );
+
+  /// Dummy active booking (today, in progress)
+  BookingModel get _dummyActiveBooking {
+    final now = DateTime.now();
+    return BookingModel(
+      id: 'dummy_active_001',
+      ownerId: 'current_user',
+      caregiverId: 'dummy_caregiver_001',
+      petId: 'dummy_pet_001',
+      serviceType: 'Dog Walking',
+      packageName: 'Premium Walk - 60 min',
+      duration: '1 hour',
+      scheduledDate: DateTime(now.year, now.month, now.day, now.hour, 0),
+      status: 'in_progress',
+      price: 499,
+      notes: 'Please use the harness instead of collar. He pulls a lot!',
+      createdAt: now.subtract(const Duration(hours: 2)),
+      actualStartTime: now.subtract(const Duration(minutes: 30)),
+    );
+  }
+
+  /// Dummy past booking (completed)
+  BookingModel get _dummyPastBooking => BookingModel(
+    id: 'dummy_past_001',
+    ownerId: 'current_user',
+    caregiverId: 'dummy_caregiver_001',
+    petId: 'dummy_pet_001',
+    serviceType: 'Pet Sitting',
+    packageName: 'Full Day Care',
+    duration: '8 hours',
+    scheduledDate: DateTime(2026, 3, 5, 9, 0),
+    status: 'completed',
+    price: 1299,
+    notes: 'Fed twice, played in the park. Very well behaved!',
+    createdAt: DateTime(2026, 3, 4, 18, 0),
+    actualStartTime: DateTime(2026, 3, 5, 9, 0),
+    actualEndTime: DateTime(2026, 3, 5, 17, 0),
+  );
+
+  // ============================================================================
+  // UI BUILDERS - BOOKINGS LIST
+  // ============================================================================
+
   /// Builds the bookings list for a specific status
   Widget _buildBookingsList(String userId, String status) {
     return StreamBuilder<List<BookingModel>>(
@@ -265,6 +330,13 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
           }
         }).toList();
 
+        // Inject dummy cards for Active and Past tabs
+        if (status == 'active') {
+          filteredBookings.insert(0, _dummyActiveBooking);
+        } else if (status == 'completed') {
+          filteredBookings.insert(0, _dummyPastBooking);
+        }
+
         if (filteredBookings.isEmpty) {
           return _buildEmptyState(status);
         }
@@ -281,6 +353,14 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
             separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final booking = filteredBookings[index];
+              // Use local dummy caregiver for dummy bookings
+              if (booking.id == 'dummy_active_001' || booking.id == 'dummy_past_001') {
+                return BookingCard(
+                  booking: booking,
+                  caregiver: _dummyCaregiver,
+                  onTap: () { _soundService.playTap(); },
+                );
+              }
               return _buildSingleBookingCard(booking);
             },
           ),

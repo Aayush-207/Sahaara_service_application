@@ -1690,11 +1690,12 @@ class _HomeTabState extends State<HomeTab> {
           ),
           child: Stack(
             children: [
-              // Background image with fade
+              // Background pet image with fade
               Positioned.fill(
                 child: Image.network(
-                  'https://images.unsplash.com/photo-1552053831-71594a27c62d?w=600&h=300&fit=crop',
+                  'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=300&fit=crop',
                   fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(color: AppColors.primary),
                 ),
               ),
               // Fade overlay
@@ -1702,11 +1703,11 @@ class _HomeTabState extends State<HomeTab> {
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                       colors: [
-                        AppColors.primary.withValues(alpha: 0.75),
-                        AppColors.primary.withValues(alpha: 0.85),
+                        AppColors.primary.withValues(alpha: 0.88),
+                        AppColors.primary.withValues(alpha: 0.55),
                       ],
                     ),
                   ),
