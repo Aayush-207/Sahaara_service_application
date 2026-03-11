@@ -42,7 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _firestoreService = FirestoreService();
   final _soundService = SoundService();
   late String _currentUserId;
-  late String _actualChatRoomId;
+  late String _actualChatRoomId = ''; // Initialize with empty string
   bool _isSending = false;
   bool _hasReported = false;
   bool _isInitializing = true;
@@ -168,6 +168,38 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty || _isSending) return;
+    
+    // Check if chat room is initialized
+    if (_isInitializing) {
+      debugPrint('⚠️ Chat room still initializing');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please wait, initializing chat...'),
+            backgroundColor: AppColors.warning,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+    
+    // Check if chat room ID is valid
+    if (_actualChatRoomId.isEmpty) {
+      debugPrint('❌ Chat room ID is empty');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Chat room not ready. Please try again.'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
 
     final message = _messageController.text.trim();
     _messageController.clear();
@@ -176,6 +208,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       debugPrint('📤 Attempting to send message: $message');
+      debugPrint('📤 Chat room ID: $_actualChatRoomId');
       
       final success = await _firestoreService.sendChatMessage(
         chatRoomId: _actualChatRoomId,

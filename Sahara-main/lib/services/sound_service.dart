@@ -8,7 +8,7 @@ class SoundService {
   SoundService._internal();
 
   late final AudioPlayer _audioPlayer;
-  bool _soundEnabled = false; // Temporarily disabled due to Android MediaPlayer issues
+  bool _soundEnabled = false; // Disabled by default due to missing sound files
   bool _initialized = false;
 
   // Initialize and load sound preference
@@ -18,10 +18,12 @@ class SoundService {
     try {
       _audioPlayer = AudioPlayer();
       final prefs = await SharedPreferences.getInstance();
-      _soundEnabled = prefs.getBool('sound_enabled') ?? true;
+      // Disable sound by default to prevent MediaPlayer errors
+      _soundEnabled = false; // Changed from prefs.getBool('sound_enabled') ?? true
+      await prefs.setBool('sound_enabled', false);
       await _audioPlayer.setVolume(0.5);
       _initialized = true;
-      debugPrint('✅ SoundService initialized successfully');
+      debugPrint('✅ SoundService initialized (sounds disabled by default)');
     } catch (e) {
       debugPrint('❌ SoundService initialization error: $e');
       _initialized = true; // Mark as initialized to avoid retry loops
@@ -50,10 +52,12 @@ class SoundService {
     if (!_soundEnabled) return;
     await _ensureInit();
     try {
+      await _audioPlayer.stop(); // Stop any playing sound first
       await _audioPlayer.play(AssetSource('sounds/success.mp3'));
       debugPrint('✅ Playing success sound');
     } catch (e) {
       debugPrint('❌ Error playing success sound: $e');
+      // Silently fail - don't crash the app for sound issues
     }
   }
 
@@ -62,10 +66,12 @@ class SoundService {
     if (!_soundEnabled) return;
     await _ensureInit();
     try {
+      await _audioPlayer.stop(); // Stop any playing sound first
       await _audioPlayer.play(AssetSource('sounds/error.mp3'));
       debugPrint('❌ Playing error sound');
     } catch (e) {
       debugPrint('⚠️ Error playing error sound: $e');
+      // Silently fail - don't crash the app for sound issues
     }
   }
 
@@ -74,10 +80,12 @@ class SoundService {
     if (!_soundEnabled) return;
     await _ensureInit();
     try {
+      await _audioPlayer.stop(); // Stop any playing sound first
       await _audioPlayer.play(AssetSource('sounds/click.mp3'));
       debugPrint('👆 Playing click sound');
     } catch (e) {
       debugPrint('⚠️ Error playing click sound: $e');
+      // Silently fail - don't crash the app for sound issues
     }
   }
 

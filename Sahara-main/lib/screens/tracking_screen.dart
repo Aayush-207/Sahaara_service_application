@@ -54,9 +54,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
   
   /// Start auto-refresh timer (every 30 seconds)
   void _startAutoRefresh() {
+    // Only refresh location, not the entire widget
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) {
-        _initializeLocation();
+      if (mounted && _selectedBooking != null) {
+        // Silently update markers without rebuilding entire widget
+        final locationProvider = context.read<LocationProvider>();
+        locationProvider.getCurrentLocation().then((_) {
+          if (mounted) {
+            _updateMarkers(locationProvider);
+          }
+        });
       }
     });
   }
@@ -78,12 +85,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   /// Update map markers based on location
   void _updateMarkers(LocationProvider locationProvider) {
-    _markers.clear();
+    final newMarkers = <Marker>{};
 
     // Add pet/owner location marker
     final petLocation = locationProvider.currentPosition;
     if (petLocation != null) {
-      _markers.add(
+      newMarkers.add(
         Marker(
           markerId: const MarkerId('pet_location'),
           position: LatLng(petLocation.latitude, petLocation.longitude),
@@ -95,12 +102,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ),
       );
       
-      // Move camera to pet location
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(petLocation.latitude, petLocation.longitude),
-        ),
-      );
+      // Move camera to pet location only on initial load
+      if (_markers.isEmpty) {
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLng(
+            LatLng(petLocation.latitude, petLocation.longitude),
+          ),
+        );
+      }
     }
     
     // Add caregiver location marker if booking is active
@@ -109,7 +118,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       final caregiverLat = (petLocation?.latitude ?? 19.0760) + 0.005;
       final caregiverLng = (petLocation?.longitude ?? 72.8777) + 0.005;
       
-      _markers.add(
+      newMarkers.add(
         Marker(
           markerId: const MarkerId('caregiver_location'),
           position: LatLng(caregiverLat, caregiverLng),
@@ -120,6 +129,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         ),
       );
+    }
+    
+    // Only update state if markers actually changed
+    if (mounted && _markers.length != newMarkers.length) {
+      setState(() {
+        _markers.clear();
+        _markers.addAll(newMarkers);
+      });
     }
   }
 
@@ -139,7 +156,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.surface,
           elevation: 0,
           title: const Text(
             'Pet Tracking',
@@ -155,13 +172,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.lock_outline, size: 64, color: Colors.grey[400]),
+              const Icon(Icons.lock_outline, size: 64, color: AppColors.textTertiary),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Please login to view tracking',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[600],
+                  color: AppColors.textSecondary,
                   fontFamily: 'Montserrat',
                 ),
               ),
@@ -174,7 +191,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         title: const Text(
           'Pet Tracking',
@@ -346,7 +363,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
@@ -368,6 +385,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         fontSize: 14,
                         fontFamily: 'Montserrat',
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   );
                 }).toList(),
@@ -619,9 +638,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             locationProvider.isLoading
                                 ? 'Updating...'
                                 : 'Updated ${_getTimeAgo(DateTime.now())}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[500],
+                              color: AppColors.textTertiary,
                               fontFamily: 'Montserrat',
                             ),
                           ),
@@ -710,15 +729,21 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             fontFamily: 'Montserrat',
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '• ${_selectedCaregiver!.location ?? 'Unknown'}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                            fontFamily: 'Montserrat',
+                        if (_selectedCaregiver!.location != null) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              '• ${_selectedCaregiver!.location}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                fontFamily: 'Montserrat',
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ],
@@ -748,7 +773,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
           _buildDetailRow(
             Icons.calendar_today_rounded,
             'Scheduled',
-            DateFormat('MMM dd, yyyy • hh:mm a').format(_selectedBooking!.scheduledDate),
+            DateFormat('MMM dd, hh:mm a').format(_selectedBooking!.scheduledDate),
           ),
           const SizedBox(height: 12),
           _buildDetailRow(
@@ -786,7 +811,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
             children: [
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
                   fontFamily: 'Montserrat',
@@ -801,6 +826,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   color: AppColors.textPrimary,
                   fontFamily: 'Montserrat',
                 ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
               ),
             ],
           ),
@@ -933,7 +960,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       Container(
                         width: 2,
                         height: 50,
-                        color: Colors.grey[300],
+                        color: AppColors.border,
                       ),
                   ],
                 ),
@@ -946,15 +973,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       color: activity.status == 'in_progress'
                           ? AppColors.secondary.withValues(alpha: 0.08)
                           : activity.status == 'completed'
-                              ? Colors.green.withValues(alpha: 0.04)
-                              : Colors.grey.withValues(alpha: 0.04),
+                              ? AppColors.success.withValues(alpha: 0.04)
+                              : AppColors.textTertiary.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: activity.status == 'in_progress'
                             ? AppColors.secondary.withValues(alpha: 0.2)
                             : activity.status == 'completed'
-                                ? Colors.green.withValues(alpha: 0.2)
-                                : Colors.grey.withValues(alpha: 0.1),
+                                ? AppColors.success.withValues(alpha: 0.2)
+                                : AppColors.textTertiary.withValues(alpha: 0.1),
                         width: 1,
                       ),
                     ),
@@ -991,17 +1018,17 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.access_time_rounded,
                               size: 14,
-                              color: Colors.grey[500],
+                              color: AppColors.textTertiary,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _formatTimelineTime(activity),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppColors.textSecondary,
                                 fontFamily: 'Montserrat',
                               ),
                             ),
@@ -1028,8 +1055,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     switch (status) {
       case 'completed':
-        bgColor = Colors.green.withValues(alpha: 0.15);
-        textColor = Colors.green[700]!;
+        bgColor = AppColors.success.withValues(alpha: 0.15);
+        textColor = AppColors.success;
         label = 'Done';
         icon = Icons.check_circle_rounded;
         break;
@@ -1040,14 +1067,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
         icon = Icons.hourglass_bottom_rounded;
         break;
       case 'pending':
-        bgColor = Colors.grey.withValues(alpha: 0.15);
-        textColor = Colors.grey[700]!;
+        bgColor = AppColors.textTertiary.withValues(alpha: 0.15);
+        textColor = AppColors.textSecondary;
         label = 'Pending';
         icon = Icons.schedule_rounded;
         break;
       default:
-        bgColor = Colors.grey.withValues(alpha: 0.1);
-        textColor = Colors.grey[600]!;
+        bgColor = AppColors.textTertiary.withValues(alpha: 0.1);
+        textColor = AppColors.textSecondary;
         label = 'Unknown';
         icon = Icons.help_outline_rounded;
     }
@@ -1081,13 +1108,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'completed':
-        return Colors.green;
+        return AppColors.success;
       case 'in_progress':
         return AppColors.secondary;
       case 'pending':
-        return Colors.grey;
+        return AppColors.textTertiary;
       default:
-        return Colors.grey;
+        return AppColors.textTertiary;
     }
   }
 

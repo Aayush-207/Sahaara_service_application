@@ -38,7 +38,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('⚠️ Please login first to seed bookings with your user ID'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -82,7 +82,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Data seeded successfully with your user ID!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -97,7 +97,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -119,7 +119,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Clear'),
           ),
         ],
@@ -148,7 +148,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Data cleared successfully!'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warning,
           ),
         );
       }
@@ -163,7 +163,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -176,7 +176,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.red.shade700),
+            const Icon(Icons.warning, color: AppColors.error),
             const SizedBox(width: 8),
             const Text('⚠️ DANGER!'),
           ],
@@ -201,7 +201,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
             child: const Text('YES, DELETE EVERYTHING'),
           ),
@@ -231,7 +231,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ ENTIRE database cleared!'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
             duration: Duration(seconds: 3),
           ),
         );
@@ -247,7 +247,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -313,7 +313,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
                             _isSeeding
                                 ? Icons.hourglass_empty
                                 : Icons.check_circle_outline,
-                            color: _isSeeding ? Colors.orange : Colors.green,
+                            color: _isSeeding ? AppColors.warning : AppColors.success,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -361,7 +361,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
                 icon: const Icon(Icons.analytics_outlined),
                 label: const Text('Check Database Status'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.blue,
+                  foregroundColor: AppColors.info,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   textStyle: const TextStyle(
                     fontSize: 16,
@@ -377,7 +377,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
                 icon: const Icon(Icons.delete_outline),
                 label: const Text('Clear Seeded Data'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.orange,
+                  foregroundColor: AppColors.warning,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   textStyle: const TextStyle(
                     fontSize: 16,
@@ -393,8 +393,8 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
                 icon: const Icon(Icons.delete_forever),
                 label: const Text('⚠️ CLEAR ENTIRE DATABASE'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: BorderSide(color: Colors.red.shade700, width: 2),
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error, width: 2),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   textStyle: const TextStyle(
                     fontSize: 16,
@@ -407,7 +407,7 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
 
               // Info Card
               Card(
-                color: Colors.blue.shade50,
+                color: AppColors.infoContainer,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -415,14 +415,14 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue.shade700),
+                          const Icon(Icons.info_outline, color: AppColors.info),
                           const SizedBox(width: 8),
-                          Text(
+                          const Text(
                             'What will be seeded?',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
+                              color: AppColors.info,
                             ),
                           ),
                         ],
@@ -460,15 +460,15 @@ class _AdminSeedScreenState extends State<AdminSeedScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: AppColors.background,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: _logs.isEmpty
                       ? const Center(
                           child: Text(
                             'No logs yet',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: AppColors.textTertiary),
                           ),
                         )
                       : ListView.builder(

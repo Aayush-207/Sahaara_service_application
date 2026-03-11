@@ -8,17 +8,16 @@ import '../models/pet_model.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  // Configure Google Sign-In - will be initialized in constructor
   late final GoogleSignIn _googleSignIn;
-
+  
   AuthService() {
-    _initializeGoogleSignIn();
-  }
-
-  Future<void> _initializeGoogleSignIn() async {
     _googleSignIn = GoogleSignIn.instance;
-    await _googleSignIn.initialize(
-      clientId: null, // Will use from google-services.json
-      serverClientId: null,
+    // Initialize with serverClientId for Android
+    _googleSignIn.initialize(
+      // Web OAuth client ID from google-services.json (client_type: 3)
+      serverClientId: '953036067023-4gqt1krgr19mmch135vqml7pr136m1q6.apps.googleusercontent.com',
     );
   }
 
@@ -32,10 +31,19 @@ class AuthService {
     required String userType,
   }) async {
     try {
+      debugPrint('📝 Attempting sign up for: $email');
+      
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Connection timeout. Please check your internet connection and try again.');
+        },
       );
+
+      debugPrint('✅ Firebase account created');
 
       final user = UserModel(
         uid: credential.user!.uid,
@@ -47,7 +55,14 @@ class AuthService {
         createdAt: DateTime.now(),
       );
 
-      await _firestore.collection('users').doc(user.uid).set(user.toMap());
+      await _firestore.collection('users').doc(user.uid).set(user.toMap()).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Database timeout. Please try again.');
+        },
+      );
+      
+      debugPrint('✅ User profile created in Firestore');
       
       // Add default pet for new owner
       if (userType == 'owner') {
@@ -56,6 +71,7 @@ class AuthService {
       
       return user;
     } on FirebaseAuthException catch (e) {
+      debugPrint('❌ FirebaseAuthException: ${e.code} - ${e.message}');
       switch (e.code) {
         case 'weak-password':
           throw Exception('The password is too weak');
@@ -63,10 +79,18 @@ class AuthService {
           throw Exception('An account already exists for this email');
         case 'invalid-email':
           throw Exception('The email address is invalid');
+        case 'network-request-failed':
+          throw Exception('Network error. Please check your internet connection and try again.');
+        case 'too-many-requests':
+          throw Exception('Too many attempts. Please try again later.');
         default:
-          throw Exception('Sign up failed: ${e.message}');
+          throw Exception('Sign up failed: ${e.message ?? "Unknown error"}');
       }
     } catch (e) {
+      debugPrint('❌ Sign up error: $e');
+      if (e.toString().contains('timeout') || e.toString().contains('network')) {
+        throw Exception('Connection error. Please check your internet and try again.');
+      }
       throw Exception('Sign up failed: $e');
     }
   }
@@ -76,21 +100,38 @@ class AuthService {
     required String password,
   }) async {
     try {
+      debugPrint('🔐 Attempting sign in for: $email');
+      
       final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Connection timeout. Please check your internet connection and try again.');
+        },
       );
+
+      debugPrint('✅ Firebase authentication successful');
 
       final doc = await _firestore
           .collection('users')
           .doc(credential.user!.uid)
-          .get();
+          .get()
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw Exception('Database timeout. Please try again.');
+            },
+          );
 
       if (doc.exists) {
+        debugPrint('✅ User data retrieved from Firestore');
         return UserModel.fromMap(doc.data()!, doc.id);
       }
       return null;
     } on FirebaseAuthException catch (e) {
+      debugPrint('❌ FirebaseAuthException: ${e.code} - ${e.message}');
       switch (e.code) {
         case 'user-not-found':
           throw Exception('No user found with this email');
@@ -100,10 +141,18 @@ class AuthService {
           throw Exception('The email address is invalid');
         case 'user-disabled':
           throw Exception('This account has been disabled');
+        case 'network-request-failed':
+          throw Exception('Network error. Please check your internet connection and try again.');
+        case 'too-many-requests':
+          throw Exception('Too many failed attempts. Please try again later.');
         default:
-          throw Exception('Sign in failed: ${e.message}');
+          throw Exception('Sign in failed: ${e.message ?? "Unknown error"}');
       }
     } catch (e) {
+      debugPrint('❌ Sign in error: $e');
+      if (e.toString().contains('timeout') || e.toString().contains('network')) {
+        throw Exception('Connection error. Please check your internet and try again.');
+      }
       throw Exception('Sign in failed: $e');
     }
   }
@@ -116,11 +165,14 @@ class AuthService {
   Future<UserModel?> signInWithGoogle({String userType = 'owner'}) async {
     try {
       // Trigger the Google Sign-In flow
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
-        scopeHint: ['email', 'profile'],
-      );
+      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
       
       // User canceled the sign-in
+      if (googleUser == null) {
+        debugPrint('Google Sign-In: User canceled');
+        return null;
+      }
+      
       debugPrint('Google Sign-In: User selected - ${googleUser.email}');
 
       // Obtain the auth details from the request
