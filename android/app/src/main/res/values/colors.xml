@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sahara App Colors -->
+    <!-- White background to match splash screen -->
+    <color name="launch_background_color">#FFFFFF</color>
+</resources>
